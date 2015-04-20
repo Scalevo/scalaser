@@ -82,9 +82,8 @@ void matching::matchTemplate()
   engine.executeCommand("test(xi,zi)");
 
   engine.put("v0",v_r);
-
-  engine.executeCommand("[v_r,se_r,z_r,xf,zf] = stairparam(xi,zi,v0);");
-/*  engine.get("v_r",v_r);
+/*  engine.executeCommand("[v_r,se_r,z_r,xf,zf] = stairparam(xi,zi,v0);");
+  engine.getEigen("v_r",v_r);
   engine.get("se_r",se_r);
   engine.get("z_r",z_r);			 
   engine.get("xf",xf);
@@ -176,7 +175,7 @@ int main(int argc, char **argv) {
  ROS_INFO("Angle method constructed"); 
 
  float beta = 0;
- ros::Rate loop_rate(1); // [Hz]
+ ros::Rate loop_rate(15); // [Hz]
 
   while (ros::ok())
   {
