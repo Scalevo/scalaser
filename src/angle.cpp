@@ -125,11 +125,11 @@ int main(int argc, char **argv) {
  ros::NodeHandle n;
  Angle angle(n);
  ROS_INFO("Woking fine, son!");
- matlab::Engine engine;
+ matlab::Engine engine(true);
 
  double a = 3;
  engine.put("a",a);
- engine.executeCommand("cd('~/catkin_ws/src/scalaser/matlab')"); // Path to matlab function
+ engine.changeWorkingDirectory("src/scalaser/matlab"); // Path to matlab function
  engine.executeCommand("test()");
  ROS_INFO("NOT WORKING");
  engine.openCommandLine();
