@@ -12,11 +12,11 @@ class matching{
   static matlab::Engine engine;  
 
   // Pointcloud Vector
-  Eigen::VectorXf xi;		// X-Vector of pointcloud transformed around inital values
-  Eigen::VectorXf zi;		// Z-Vector of pointcloud transformed around inital values
-  Eigen::VectorXf xf;		// Common X-Vector of transformed pointcloud and optimized template
-  Eigen::VectorXf zf;		// Z-Vector of transformed
-  Eigen::VectorXf z_r;		// Z-Vector of optimized template
+  Eigen::VectorXd xi;		// X-Vector of pointcloud transformed around inital values
+  Eigen::VectorXd zi;		// Z-Vector of pointcloud transformed around inital values
+  Eigen::VectorXd xf;		// Common X-Vector of transformed pointcloud and optimized template
+  Eigen::VectorXd zf;		// Z-Vector of transformed
+  Eigen::VectorXd z_r;		// Z-Vector of optimized template
 
   // Transform Parameters
   float phi;
@@ -25,11 +25,11 @@ class matching{
   float fov_d;
 
   // Initial and Result Vector
-  Eigen::VectorXf v0;
-  Eigen::VectorXf v_r;
+  Eigen::VectorXd v0;
+  Eigen::VectorXd v_r;
 
   // Error of fminsearch()
-  float se_r;
+  double se_r;
   
   // Helper to transform each laser scan accordingly
   int h;
@@ -61,8 +61,8 @@ void matching::matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg)
   // Initialize Vector transformed around initial guess
   for (int i=0;i<fov_d;++i)
   {
-   float a = msg->points[i+fov_s].x;
-   float b = msg->points[i+fov_s].y;
+   double a = msg->points[i+fov_s].x;
+   double b = msg->points[i+fov_s].y;
    //xi.push_back(- b*sin(phi)*h + a*cos(phi));
    //zi.push_back(- a*cos(phi) - b*cos(phi)*h);
 
@@ -76,16 +76,21 @@ void matching::matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg)
 void matching::matchTemplate()
 {
   //ROS_INFO("Matching Template");
-  engine.put("xi",xi);
+  double test = 3;
+  double result;
+  engine.put("test",test);
+  engine.get("test",result);
+  std::cout<<result<<std::endl;
+/*  engine.put("xi",xi);
   engine.put("zi",zi);
 
   engine.executeCommand("test(xi,zi)");
 
   engine.put("v0",v_r);
-
-  engine.executeCommand("[v_r,se_r,z_r,xf,zf] = stairparam(xi,zi,v0);");
-/*  engine.get("v_r",v_r);
   engine.get("se_r",se_r);
+  engine.executeCommand("[v_r,se_r,z_r,xf,zf] = stairparam(xi,zi,v0);");
+  engine.get("v_r",v_r);
+
   engine.get("z_r",z_r);			 
   engine.get("xf",xf);
   engine.get("zf",zf);

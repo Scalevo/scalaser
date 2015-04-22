@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(scalaser)
 
+set(CMAKE_CXX_FLAGS "--std=c++11")
+
 find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   roscpp
@@ -171,6 +173,6 @@ target_link_libraries(LaserScanToPointCloud ${catkin_LIBRARIES}  ) #${Boost_FILE
 ## add_executable(Hough src/hough.cpp)
 ##target_link_libraries(Hough ${catkin_LIBRARIES})
 
-add_executable(Angle src/angle.cpp)
+add_executable(Angle src/angle_simple.cpp)
 target_link_libraries(Angle ${catkin_LIBRARIES})
 
