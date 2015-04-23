@@ -7,9 +7,19 @@ function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0,z0,v0_)
 %% Minimize delta for v
 
 handle = @delta;
-options = struct('MaxFunEvals',1000,'MaxIter',1000); % 'OutputFcn', @outfun,'PlotFcns',@optimplotfval
+options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
+
+
 [v_r,se_r] = fminsearch(handle,v0_,options);
 %disp(v_r);
+
+         plot(xi,zi,'x');
+         axis equal tight
+         hold on;
+         plot(xi,z_r,'o')
+         axis equal tight
+	 hold off;
+
 
 
 %% Delta function - calculates the difference between real-z and template-z
@@ -19,9 +29,9 @@ options = struct('MaxFunEvals',1000,'MaxIter',1000); % 'OutputFcn', @outfun,'Plo
       
        %  h     = v(1);
        %  t     = v(2);
-        h = sqrt(v(1)^2);
-        t = sqrt(v(2)^2);
-        dx    = sqrt(v(3)^2);
+        h = sqrt(v(1))^2;
+        t = sqrt(v(2))^2;
+        dx    = v(3);
         dz    = v(4);
         theta = v(5);
 
@@ -66,15 +76,21 @@ options = struct('MaxFunEvals',1000,'MaxIter',1000); % 'OutputFcn', @outfun,'Plo
             z_r(it) = -xi(it)/(tan(eta)) + (n+1)*h/(sin(eta)) - h*sin(eta);
             end
         end
-       
-        e = (zi - z_r);    % Error between pointcloud and template
+        
+        %e = (zi - z_r);    % Error between pointcloud and template
+        for i = 1:length(xi)
+          e(i) = zi(i)-z_r(i);
+	end
         se = dot(e,e);
         
-        
 %         plot(xi,zi,'x');
-%         axis equal tight
-%         plot(xi,z_r,'o')
-%         axis equal tight
+ %        axis equal tight
+  %       hold on;
+   %      plot(xi,z_r,'o')
+    %     axis equal tight
+	% hold off;
+        
+
     end
 end
 

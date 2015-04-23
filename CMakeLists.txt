@@ -173,6 +173,6 @@ target_link_libraries(LaserScanToPointCloud ${catkin_LIBRARIES}  ) #${Boost_FILE
 ## add_executable(Hough src/hough.cpp)
 ##target_link_libraries(Hough ${catkin_LIBRARIES})
 
-add_executable(Angle src/angle_simple.cpp)
+add_executable(Angle src/angle.cpp)
 target_link_libraries(Angle ${catkin_LIBRARIES})
 

@@ -2,7 +2,7 @@
 #include "sensor_msgs/PointCloud.h"
 #include "laser_geometry/laser_geometry.h"
 #include "geometry_msgs/Point32.h"
-#incldue "std_msgs/Float32.h"
+#include "std_msgs/Float32.h"
 
 class cloudSub{
 

@@ -17,6 +17,7 @@ public:
 };
 // inputV(4),outputV(4) -> Initialize vector to desired size
 Test::Test(): inputV(4),outputV(4) {
+  engine.initialize();
   for (int i = 0;i<4;i++) {		// Fill Vector with values
   inputV(i) = i;
   }
@@ -30,6 +31,7 @@ void Test::callFunc(){
 // Execute a simple Test Function and save the result in to outputV		
   engine.executeCommand("[outputV]=test_simple(inputV)"); 
   engine.get("outputV",outputV);
+  for (int i = 0;i<4;i++) ROS_INFO("Intput: %f ---- Output: %f",inputV(i),outputV(i));
 }
 
 matlab::Engine Test::engine(true); // Initialize static matlab engine
