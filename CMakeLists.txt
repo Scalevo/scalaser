@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   geometry_msgs
+  visualization_msgs
   tf
   matlab_cpp_interface
 )
@@ -83,6 +84,7 @@ catkin_package(
   laser_geometry
   roscpp
   sensor_msgs
+  visualization_msgs
   message_filters
   tf
   matlab_cpp_interface
@@ -175,4 +177,18 @@ target_link_libraries(LaserScanToPointCloud ${catkin_LIBRARIES}  ) #${Boost_FILE
 
 add_executable(Angle src/angle.cpp)
 target_link_libraries(Angle ${catkin_LIBRARIES})
+
+add_executable(StairModel src/stair_model.cpp)
+target_link_libraries(StairModel ${catkin_LIBRARIES})
+
+
+
+add_executable(ChairModel src/chair_model.cpp)
+target_link_libraries(ChairModel ${catkin_LIBRARIES})
+
+
+
+add_executable(Laser2Stair src/laser2stair_tf_broadcaster.cpp)
+target_link_libraries(Laser2Stair ${catkin_LIBRARIES})
+
 

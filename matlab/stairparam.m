@@ -1,4 +1,4 @@
-function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0,z0,v0_)
+function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0,z0,v0_,hs)
 % Returns the result of the fminserach using start values as well as the
 % pointcloud vectors.
 %
@@ -13,12 +13,13 @@ options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'
 [v_r,se_r] = fminsearch(handle,v0_,options);
 %disp(v_r);
 
+         subplot(2,1,hs);
          plot(xi,zi,'x');
          axis equal tight
          hold on;
          plot(xi,z_r,'o')
          axis equal tight
-	 hold off;
+         hold off;
 
 
 
