@@ -14,6 +14,8 @@ class StairModel
   ros::Publisher stair_pub;
   // Markers
   visualization_msgs::Marker marker;
+  // Tf frame
+  std::string frame_id;
   
   // Stair Parameters
   std::vector<float> v_s;
@@ -31,13 +33,10 @@ public:
 
 };
 
- StairModel::StairModel(ros::NodeHandle n,std::string frame_id_): n_(n),v_s(5,0),beta(0),phi0(43*3.14/180),dz0(.65)
+ StairModel::StairModel(ros::NodeHandle n,std::string frame_id_): n_(n),frame_id(frame_id_),v_s(5,0),beta(0),phi0(43*3.14/180),dz0(.65)
 {
-
-  InitMarker(frame_id_);
   stair_sub = n_.subscribe("/stair_parameters",10, &StairModel::StairCallback, this);
   beta_sub = n_.subscribe("/beta",10, &StairModel::BetaCallback, this);
-  marker.lifetime = ros::Duration(.5);
 }
 
 
@@ -49,7 +48,7 @@ void StairModel::InitMarker(std::string frame_id_)
   marker.ns = "stair_model"; 
   marker.id = 0;
   marker.type = visualization_msgs::Marker::CUBE_LIST;
-
+  marker.lifetime = ros::Duration();
 }
 
 void StairModel::StairCallback(const std_msgs::Float32MultiArray::ConstPtr& stair_param)
@@ -65,7 +64,7 @@ void StairModel::BetaCallback(const std_msgs::Float32::ConstPtr& angle)
 
 void StairModel::SetPosition()
 {
-
+   InitMarker(frame_id);
    marker.action = visualization_msgs::Marker::ADD;
    marker.points.clear();
 
@@ -116,7 +115,7 @@ void StairModel::SetPosition()
     marker.color.a = 1.0;
 
     geometry_msgs::Point p;
-    for (int i=0;i<3;i++)
+    for (int i=-1;i<4;i++)
     {
     p.x = 0 + h*i;
     p.y = 0;
