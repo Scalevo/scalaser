@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="scalaser" type="Angle" name="angle" output="screen" >
+  <param name="fov_s" type="int" value="200" />
+  <param name="fov_d" type="int" value="150" />
+  <param name="dzi" type="double" value=".65" />
+  </node>
+</launch>

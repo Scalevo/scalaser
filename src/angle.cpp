@@ -92,8 +92,8 @@ void matching::matchTemplate()
   engine.put("h",h);
 
   //engine.executeCommand("test(xi,zi,h)");
-  if (se_r>0.05) v_r = v0;
-  engine.put("v0",v_r);
+  if (se_r<0.05) v0 = v_r;
+  engine.put("v0",v0);
 /*
   ROS_INFO("BEFORE FMINSEARCH()");
   ROS_INFO("stair heigth________h = %f",v_r(0)); 
@@ -188,8 +188,17 @@ public:
 
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_),fov_s(200),fov_d(150),phi_1(-43*3.14/180),phi_2(-43*3.14/180),dzi(.65),a(.7),v_s(5)
+n(n_),phi_1(-43*3.14/180),phi_2(-43*3.14/180),a(.7),v_s(5)
 {
+  
+  n.param("/angle/fov_s",fov_s,200);
+  n.param("/angle/fov_d",fov_d,150);
+  n.param("/angle/dzi",dzi,.65);
+
+  ROS_INFO("Field of View Start: %d",fov_s);
+  ROS_INFO("Field of View Window: %d",fov_d); 
+  ROS_INFO("Dz Initial: %f",dzi);   
+
   // initialize start vector v0_1
   v0_1.push_back(0.17);			// heigth - 		h0
   v0_1.push_back(0.3);			// depth - 		t0
@@ -203,9 +212,6 @@ n(n_),fov_s(200),fov_d(150),phi_1(-43*3.14/180),phi_2(-43*3.14/180),dzi(.65),a(.
   v0_2.push_back(0.0);			// phase offset - 	dx0
   v0_2.push_back(0.0);			// sensor height - 	dz0
   v0_2.push_back(0*3.14/180);		// sensor rotation - 	phi0
-
-  
-
 
   ROS_INFO("Start Values for fminsearch:");
   ROS_INFO("stair heigth________h0 = %f",v0_1[0]); 
@@ -251,8 +257,10 @@ int main(int argc, char **argv) {
 
  ros::init(argc,argv,"angle");
  ros::NodeHandle n;
+
  Angle angle(n);
  ROS_INFO("Angle method constructed"); 
+
 
  ros::Rate loop_rate(3); // [Hz]
 
