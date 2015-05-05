@@ -1,40 +1,13 @@
-#include <ros/ros.h>
-#include <visualization_msgs/Marker.h>
-#include "std_msgs/Float32MultiArray.h"
-#include "std_msgs/Float32.h"
-#include "math.h"
+#include "stair_model.h"
 
-class StairModel
+ StairModel::StairModel(ros::NodeHandle n,std::string frame_id_): n_(n),frame_id(frame_id_),v_s(5,0),beta(0)
 {
-  ros::NodeHandle n_;
-  // Subscriber
-  ros::Subscriber stair_sub;
-  ros::Subscriber beta_sub;
-  // Publisher
-  ros::Publisher stair_pub;
-  // Markers
-  visualization_msgs::Marker marker;
-  // Tf frame
-  std::string frame_id;
-  
-  // Stair Parameters
-  std::vector<float> v_s;
-  float beta;
-  float phi0;
-  float dz0;
+  n_.param("/scalaser/dzi",dz0,.65);
+  n_.param("/scalaser/phi",phi0,43*3.14/180);
+  phi0 = -phi0*3.14/180;
 
-public:
-  StairModel(ros::NodeHandle n,std::string frame_id_);
-  void InitMarker(std::string frame_id);
-  void SetPosition();
-  void PublishModel();
-  void StairCallback(const std_msgs::Float32MultiArray::ConstPtr& stair_param);
-  void BetaCallback(const std_msgs::Float32::ConstPtr& angle);
-
-};
-
- StairModel::StairModel(ros::NodeHandle n,std::string frame_id_): n_(n),frame_id(frame_id_),v_s(5,0),beta(0),phi0(43*3.14/180),dz0(.65)
-{
+  ROS_INFO("dzi: %f",dz0);
+  ROS_INFO("phi: %f",phi0);
   stair_sub = n_.subscribe("/stair_parameters",10, &StairModel::StairCallback, this);
   beta_sub = n_.subscribe("/beta",10, &StairModel::BetaCallback, this);
 }
@@ -51,13 +24,13 @@ void StairModel::InitMarker(std::string frame_id_)
   marker.lifetime = ros::Duration();
 }
 
-void StairModel::StairCallback(const std_msgs::Float32MultiArray::ConstPtr& stair_param)
+void StairModel::StairCallback(const std_msgs::Float64MultiArray::ConstPtr& stair_param)
 {
   v_s.clear();
   for (int i=0;i<5;i++) v_s.push_back(stair_param->data[i]);
 }
 
-void StairModel::BetaCallback(const std_msgs::Float32::ConstPtr& angle)
+void StairModel::BetaCallback(const std_msgs::Float64::ConstPtr& angle)
 {
   beta = angle->data;
 }
@@ -69,20 +42,20 @@ void StairModel::SetPosition()
    marker.points.clear();
 
 
-    float h = v_s[0];
-    float t = v_s[1];
-    float dx = v_s[2];
-    float dz = dz0+v_s[3];
-    float phi = phi0-v_s[4];
-    float theta = atan(t/h);// - 8*3.14/180;
-
+    double h = v_s[0];
+    double t = v_s[1];
+    double dx = v_s[2];
+    double dz = dz0+v_s[3];
+    double phi = -phi0-v_s[4];
+    double theta = atan(t/h);// - 8*3.14/180;
+/*
   ROS_INFO("STAIR PARAMETERS RECEIVED");
   ROS_INFO("h: %f, t: %f, dx: %f, dz: %f, phi: %f",h,t,dx,dz,phi);
    ROS_INFO("THETA: %F",theta);
-
+*/
  /*
-    float x = - sin(phi)*dz - cos(phi)*dx - h*cos(phi)*sin(phi) + 0.01;
-    float z = - cos(phi)*dz + sin(phi)*dx - h*cos(phi)*cos(phi) - h/2 + 0.03;
+    double x = - sin(phi)*dz - cos(phi)*dx - h*cos(phi)*sin(phi) + 0.01;
+    double z = - cos(phi)*dz + sin(phi)*dx - h*cos(phi)*cos(phi) - h/2 + 0.03;
     // Set Position
  
     marker.pose.orientation.x = cos(phi) - sin(phi);
@@ -95,7 +68,7 @@ void StairModel::SetPosition()
 */
 
  
-    marker.pose.position.x = -sin(theta)*t/2 + cos(theta)*h/2;
+    marker.pose.position.x = -sin(theta)*t/2 + cos(theta)*h/2 + sin(theta)*t;
     marker.pose.position.y = 0;
     marker.pose.position.z = -cos(theta)*t/2 - sin(theta)*h/2;
     marker.pose.orientation.x = 0;
@@ -115,16 +88,13 @@ void StairModel::SetPosition()
     marker.color.a = 1.0;
 
     geometry_msgs::Point p;
-    for (int i=-1;i<4;i++)
+    for (int i=-3;i<4;i++)
     {
     p.x = 0 + h*i;
     p.y = 0;
     p.z = 0 + t*i;
     marker.points.push_back(p);
     }
-
-
-
 
 }
 
@@ -133,43 +103,4 @@ void StairModel::PublishModel()
     stair_pub.publish(marker);
     marker.action = visualization_msgs::Marker::DELETE;
 }
-
-int main( int argc, char** argv )
-{
-  ros::init(argc,argv,"stair_model");
-  ros::NodeHandle n;
-  std::string frame_id ("/stair_middle");
-  StairModel stair(n,frame_id);
-
-  ros::Rate loop_rate(5); // [Hz]
-
-
-  while (ros::ok())
-  {
-    stair.SetPosition();
-    stair.PublishModel();
-    loop_rate.sleep();
-    ros::spinOnce();
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -1,29 +1,49 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
-#include "std_msgs/Float32MultiArray.h"
-#include "std_msgs/Float32.h"
+#include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/Float64.h"
 #include "math.h"
 
 class ChairModel
 {
   ros::NodeHandle n_;
+  // Subscriber
+  ros::Subscriber stair_sub;
   // Publisher
   ros::Publisher chair_pub;
   // Markers
   visualization_msgs::Marker marker;
   
+  std::vector<double> v_s;
+  double beta;
+  double phi0;
+  double dz0;
+
+
 public:
   ChairModel(ros::NodeHandle n,std::string frame_id_);
   void InitMarker(std::string frame_id);
   void SetPosition();
   void PublishModel();
+  void StairCallback(const std_msgs::Float64MultiArray::ConstPtr& stair_param);
 
 };
 
- ChairModel::ChairModel(ros::NodeHandle n,std::string frame_id_): n_(n)
+ ChairModel::ChairModel(ros::NodeHandle n,std::string frame_id_): n_(n),v_s(5,0)
 {
+  n_.param("/scalaser/dzi",dz0,.65);
+  n_.param("/scalaser/phi",phi0,43*3.14/180);
+  phi0 = -phi0*3.14/180;
+
   InitMarker(frame_id_);
   marker.lifetime = ros::Duration();
+}
+
+
+void ChairModel::StairCallback(const std_msgs::Float64MultiArray::ConstPtr& stair_param)
+{
+  v_s.clear();
+  for (int i=0;i<5;i++) v_s.push_back(stair_param->data[i]);
 }
 
 
@@ -35,33 +55,40 @@ void ChairModel::InitMarker(std::string frame_id_)
   marker.ns = "chair_model"; 
   marker.id = 0;
   marker.type = visualization_msgs::Marker::MESH_RESOURCE;
-  marker.mesh_resource = "package://scalaser/meshes/scalevo.stl";
+  marker.mesh_resource = "package://scalaser/meshes/tracks.stl";
   marker.action = visualization_msgs::Marker::ADD;
 }
 
 
 void ChairModel::SetPosition()
 { 
-    marker.pose.position.x = .42;
-    marker.pose.position.y = 0;
-    marker.pose.position.z = 0;
-    marker.pose.orientation.x = 0;
-    marker.pose.orientation.y = 1;
-    marker.pose.orientation.z = 0;
 
+    double h = v_s[0];
+    double t = v_s[1];
+    double dx = v_s[2];
+    double dz = dz0+v_s[3];
+    double phi = -phi0-v_s[4];
+    double theta = atan(t/h);
+
+
+    marker.pose.position.x = 0.125-.65;
+    marker.pose.position.y = 0;
+    marker.pose.position.z = -0.342-.2;
+
+    marker.pose.orientation.x = 0;
+    marker.pose.orientation.y = sin(.258-phi/2);
+    marker.pose.orientation.z = 0;
+    marker.pose.orientation.w = cos(.258-phi/2);
     // Set Scale
-    marker.scale.x = 1.0;
-    marker.scale.y = 1.0;
-    marker.scale.z = 1.0;
+    marker.scale.x = 0.001;
+    marker.scale.y = 0.001;
+    marker.scale.z = 0.001;
 
     // Set colour
-    marker.color.r = 0.0f;
-    marker.color.g = 1.0f;
+    marker.color.r = 1.0f;
+    marker.color.g = 0.5f;
     marker.color.b = 0.0f;
     marker.color.a = 1.0;
-
-
-
 
 
 }
