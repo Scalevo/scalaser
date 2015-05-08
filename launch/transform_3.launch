@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
 
-  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-0.3 0 0.25 0 0 0 base laser_3 100" />
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-0.3 0 0.25 3.14159264 0  0  base laser_3 100" />
 
 </launch>
