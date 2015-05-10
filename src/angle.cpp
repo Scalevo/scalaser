@@ -2,7 +2,7 @@
 //#include "matching.h"
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_),a(.7),v_s(5),beta_old(0)
+n(n_),a(.7),v_s(5),beta_old(0),v0{0.17,0.3,0.0,0.0,0.0}
 {
   setParameters();
 
@@ -13,20 +13,14 @@ n(n_),a(.7),v_s(5),beta_old(0)
   ROS_INFO("Field of View Window: %d",fov_d); 
   ROS_INFO("Dz Initial: %f",dzi);   
 
-  // initialize start vector v0
-  v0.push_back(0.17);		     	// heigth - 		h0
-  v0.push_back(0.3);			    // depth - 		t0
-  v0.push_back(0.0);			    // phase offset - 	dx0
-  v0.push_back(0.0);			    // sensor height - 	dz0
-  v0.push_back(0*3.14/180);		// sensor rotation - 	phi0
-/*
-  ROS_INFO("Start Values for fminsearch:");
-  ROS_INFO("stair heigth________h0 = %f",v0[0]); 
-  ROS_INFO("stair depth_________t0 = %f",v0[1]);
-  ROS_INFO("phase offset_______dx0 = %f",v0[2]);
-  ROS_INFO("sensor height______dz0 = %f",v0[3]);
-  ROS_INFO("sensor rotation___phi0 = %f",v0[4]);
-*/
+
+  // ROS_INFO("Start Values for fminsearch:");
+  // ROS_INFO("stair heigth________h0 = %f",v0[0]); 
+  // ROS_INFO("stair depth_________t0 = %f",v0[1]);
+  // ROS_INFO("phase offset_______dx0 = %f",v0[2]);
+  // ROS_INFO("sensor height______dz0 = %f",v0[3]);
+  // ROS_INFO("sensor rotation___phi0 = %f",v0[4]);
+
 
   // create & asssign temporary matching object
   matching cloud_1_t(n_,phi0,dzi,fov_s,fov_d,v0,1);
@@ -46,34 +40,6 @@ n(n_),a(.7),v_s(5),beta_old(0)
   pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/velocity",100);
 
   main_timer = n.createTimer(ros::Duration(0.25),&Angle::timerCallback,this);
-/*
-  ros::Rate loop_rate(.8); // [Hz]
-  while (ros::ok())
-  {
-    cloud_1.setData();
-    cloud_2.setData();
-    cloud_1.matchTemplate();
-    cloud_2.matchTemplate();
-/*
-    n.param("/scalaser/fov_s",fov_s,200);
-    n.param("/scalaser/fov_d",fov_d,150);
-    n.param("/scalaser/dzi",dzi,.65);
-    n.param("/scalaser/phi",phi0,-43*3.14/180);
-    cloud_1.updateParameters(phi0,dzi,fov_s,fov_d);
-    cloud_2.updateParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
-
-    computeAngle();
-    computeStair();
-    computeVelocity();
-    setPosition();
-    //ROS_INFO("Difference between Clouds: %f",cloud_1.getCloudStamp() - cloud_2.getCloudStamp());
-    double one = ros::Time::now().toSec();
-    loop_rate.sleep();
-    double two = ros::Time::now().toSec();
-    ROS_INFO("Sleeptime: %f",two-one);
-    ros::spinOnce();
-  }
-  */
 }
 
 void Angle::timerCallback(const ros::TimerEvent& event)
@@ -127,6 +93,8 @@ void Angle::computeVelocity()
 
   pub_velocity.publish(velocity);
 }
+
+
 
 void Angle::setPosition()
 {

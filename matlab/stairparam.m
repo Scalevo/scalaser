@@ -1,4 +1,4 @@
-function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0,z0,v0_,hs)
+function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0, z0, v0_, hs, lb ,ub )
 % Returns the result of the fminserach using start values as well as the
 % pointcloud vectors.
 %
@@ -10,7 +10,9 @@ handle = @delta;
 options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
 
 
-[v_r,se_r] = fminsearch(handle,v0_,options);
+% [v_r,se_r] = fminsearch(handle,v0_,options);
+[v_r,se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub);
+
 %disp(v_r);
 
         % subplot(2,1,hs);
@@ -20,7 +22,6 @@ options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'
         % plot(xi,z_r,'o')
         % axis equal tight
         % hold off;
-
 
 
 %% Delta function - calculates the difference between real-z and template-z
@@ -40,7 +41,7 @@ options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'
         zi = cos(theta)*z0 + sin(theta)*x0;
         
         zi = zi + dz;
-        xi = xi + dx;
+        xi = xi + dx; 
         
         eta = atan2(t,h);
 %         a = h/2*cos(eta);           % Parameters used for fourier transform
