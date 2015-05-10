@@ -6,8 +6,12 @@
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "matlabCppInterface/Engine.hpp"
+#include "matlabCppInterface/MatFile.hpp"
 #include <boost/cstdint.hpp>
 #include <math.h>
+
+
+
 
 class matching{
   
@@ -16,18 +20,32 @@ class matching{
   // Static Engine
   static matlab::Engine engine;
 
+  matlab::MatFile file;
+  // Message Subscriber
+
+/*
+  ros::Subscriber sub;
+  message_filters::Subscriber<sensor_msgs::PointCloud> subC;
+  message_filters::Cache<sensor_msgs::PointCloud> cache;
+
+*/
   // Publishers
   ros::Publisher se_r_pub;
 
+  // Messages
+  sensor_msgs::PointCloud::ConstPtr temporary_msg;
+
   // Pointcloud Vector
-  Eigen::VectorXd xi;		// X-Vector of pointcloud transformed around inital values
-  Eigen::VectorXd zi;		// Z-Vector of pointcloud transformed around inital values
-  Eigen::VectorXd xf;		// Common X-Vector of transformed pointcloud and optimized template
-  Eigen::VectorXd zf;		// Z-Vector of transformed
-  Eigen::VectorXd z_r;		// Z-Vector of optimized template
+  Eigen::VectorXd xi;		     // X-Vector of pointcloud transformed around inital values
+  Eigen::VectorXd zi;		     // Z-Vector of pointcloud transformed around inital values
+  Eigen::VectorXd xi_temp;   // X-Vector of pointcloud transformed around inital values
+  Eigen::VectorXd zi_temp;   // Z-Vector of pointcloud transformed around inital values
+  Eigen::VectorXd xf;	       // Common X-Vector of transformed pointcloud and optimized template
+  Eigen::VectorXd zf;		     // Z-Vector of transformed
+  Eigen::VectorXd z_r;		   // Z-Vector of optimized template
 
   // Transform Parameters
-  double phi;
+  double phi0;
   double dzi;
   int fov_s;
   int fov_d;
@@ -41,18 +59,38 @@ class matching{
   
   // Helper to transform each laser scan accordingly
   int h;
+  
+
+  double threshold;
+  // Time tracker
+  double computeTime;
+  double oldTime;
+  double sumTime;
+  double cloud_stamp;
+  ros::Time start_time;
 
 
 public:
   matching() {};
-  matching(ros::NodeHandle n_,double phi_,double dzi_,int fov_s_,int fov_d_,std::vector<double> &v0_,int h_);
+  matching(ros::NodeHandle n_,double phi0_,double dzi_,int fov_s_,int fov_d_,std::vector<double> &v0_,int h_);
  // std::vector<double> getResultVector();
   void matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg);
+  void transformMsg(const sensor_msgs::PointCloud::ConstPtr& msg);
   void matchTemplate();
+  void updateParameters(double phi0_,double dzi_,int fov_s_,int fov_d_);
   void publishSe_r();
+  void setData() {xi = xi_temp; zi = zi_temp;};
+  void fillMatfile();
+  void fillEngine(); // Slow way of sending data to matlab 
+
+  // Return functions
   Eigen::VectorXd getV_r() {return v_r;};
   double getDx() {return fmod(v_r(2),sqrt(v_r(0)*v_r(0)+v_r(1)*v_r(1)));}
   double getSe_r() {return se_r;}
+  ros::Time getStartTime() {return start_time;}
+  double getCloudStamp() {return cloud_stamp;}
+
+
 };
 
 #endif

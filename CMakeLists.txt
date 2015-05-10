@@ -13,13 +13,6 @@ find_package(catkin REQUIRED COMPONENTS
   matlab_cpp_interface
 )
 
-
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-   sensor_msgs  # Or other packages containing msgs
- )
-
 catkin_package(
   INCLUDE_DIRS include
 
@@ -43,24 +36,20 @@ include_directories(
 
 
 add_executable(LaserScanToPointCloud src/LaserScanToPointCloud.cpp)
-target_link_libraries(LaserScanToPointCloud ${catkin_LIBRARIES}  ) #${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY}
-
-## add_executable(Hough src/hough.cpp)
-##target_link_libraries(Hough ${catkin_LIBRARIES})
 
 add_executable(Angle src/main.cpp
-		     src/angle.cpp
-		     src/matching.cpp)
-target_link_libraries(Angle ${catkin_LIBRARIES})
+		                 src/angle.cpp
+		                 src/matching.cpp)
 
 add_executable(StairModel src/stair_viz.cpp
                           src/stair_model.cpp)
-target_link_libraries(StairModel ${catkin_LIBRARIES})
 
 add_executable(ChairModel src/chair_model.cpp)
-target_link_libraries(ChairModel ${catkin_LIBRARIES})
 
 add_executable(Laser2Stair src/laser2stair_tf_broadcaster.cpp)
+
+target_link_libraries(LaserScanToPointCloud ${catkin_LIBRARIES}  )
+target_link_libraries(Angle ${catkin_LIBRARIES})
 target_link_libraries(Laser2Stair ${catkin_LIBRARIES})
-
-
+target_link_libraries(ChairModel ${catkin_LIBRARIES})
+target_link_libraries(StairModel ${catkin_LIBRARIES})

@@ -33,7 +33,7 @@ public:
     sensor_msgs::PointCloud cloud;
     try
     {
-        projector_.transformLaserScanToPointCloud(
+      projector_.transformLaserScanToPointCloud(
           laser_frame_id,*scan_in, cloud,listener_);
     }
     catch (tf::TransformException& e)
