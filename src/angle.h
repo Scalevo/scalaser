@@ -1,15 +1,16 @@
 #ifndef ANGLE_H
 #define ANGLE_H
 
-#include "ros/ros.h"
 #include <boost/cstdint.hpp>
+#include <math.h>
+
+#include "ros/ros.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
 #include <tf/transform_broadcaster.h>
-#include <math.h>
+#include "scalevo_msgs/Starter.h"
+
 #include "matching.h"
-#include "message_filters/subscriber.h"
-#include "message_filters/cache.h"
 
 
 
@@ -18,6 +19,9 @@ class Angle{
 
 private:
   ros::NodeHandle n;
+
+  // Status Server
+  ros::ServiceServer service;
 
   // Subscribers
   ros::Subscriber sub_1;
@@ -70,6 +74,8 @@ public:
   Angle(ros::NodeHandle n_);
 
   void timerCallback(const ros::TimerEvent& event);
+
+  bool alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response);
 
   void computeAngle();
   void computeStair();

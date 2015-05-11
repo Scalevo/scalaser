@@ -88,7 +88,7 @@ void StairModel::SetPosition()
     marker.color.a = 1.0;
 
     geometry_msgs::Point p;
-    for (int i=-3;i<4;i++)
+    for (int i=-6;i<1;i++)
     {
     p.x = 0 + h*i;
     p.y = 0;

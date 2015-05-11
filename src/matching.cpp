@@ -19,7 +19,7 @@ v0(v0_.size()), v_r(v0_.size()), lb(v0_.size()), ub(v0_.size())
 
   // Initialize upper and lower bound vector for fminsearch
   lb << 0.13, 0.20, 0, -10, -3.14;
-  ub << 0.20, 0.50, 10, 10, 3.14;
+  ub << 0.20, 0.50, .33, 10, 3.14;
 }
 
 

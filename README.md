@@ -30,6 +30,7 @@ If you use this work in an academic context, please cite the following publicati
 - [Eigen](http://eigen.tuxfamily.org) (linear algebra library),
 - [Matlab](http://ch.mathworks.com/products/matlab/) (matlab),
 - [c_matlabcppinterface](https://bitbucket.org/adrlab/c_matlabcppinterface/wiki/Home) (matlab C++ interface),
+- [scalevo_msgs](http://www.github.com/scalevo/scalevo_msgs) (messages package of scalevo),
 ### Building
 
 In order to install, clone the latest version from this repository into your catkin workspace and compile the package using
