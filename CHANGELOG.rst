@@ -9,6 +9,9 @@ TODO
   - solution_1: tracking of the motor encoders helps to determine if dx makes sense and changes dx accordingly
   - solution_2: using the fminsearch results from the other side as start values reduces chances of dx beeing phaseoffset
   - solution_3: filter which checks previous dx value and beta value and compares them to check if the difference make any sense
+  - solution_4: use boundary constrains of dx to "dx_old ± (stair-diagonal)/2" to stop phase offset completely
+  
+  - After succesfull implentation of the above methods, remove modulo constraint of beta to allow for wider angle determination range
   
 * implement service which starts the beta computation
 * make fov_s, fov_d, dzi, phi0 dependant of the lambda position received from the MyRIO
