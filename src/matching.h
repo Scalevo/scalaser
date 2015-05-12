@@ -63,22 +63,33 @@ class matching{
   double threshold;
 
  public:
+  // Constructors
   matching() {}
-  matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, std::vector<double> &v0_, int h_);
-  // std::vector<double> getResultVector();
+  matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, Eigen::VectorXd v0_, int h_);
+
+  // main functions
   void matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg);
   void transformMsg(const sensor_msgs::PointCloud::ConstPtr& msg);
   void matchTemplate();
-  void updateParameters(double phi0_, double dzi_, int fov_s_, int fov_d_);
-  void publishSe_r();
-  void setData() {xi = xi_temp; zi = zi_temp;}
-  void fillMatfile();
+
+  // cpp to matlab connection functions
+  void fillMatfile(); // Fast way of sending data to matlab
   void fillEngine();  // Slow way of sending data to matlab
+
+  // Parameter update functions
+  void setParameters(double phi0_, double dzi_, int fov_s_, int fov_d_);
+  void setData() {xi = xi_temp; zi = zi_temp;}
+  void setFminArgs(Eigen::VectorXd v_r_); 
 
   // Return functions
   Eigen::VectorXd getV_r() {return v_r;}
-  double getDx() {return fmod(v_r(2), sqrt(v_r(0)*v_r(0)+v_r(1)*v_r(1)));}
+  // double getDx() {return fmod(v_r(2), sqrt(v_r(0)*v_r(0)+v_r(1)*v_r(1)));}
+  double getDx() {return v_r(2);}
   double getSe_r() {return se_r;}
+
+  // Publishers
+  void publishSe_r();
+
 };
 
 #endif

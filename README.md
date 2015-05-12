@@ -42,7 +42,7 @@ In order to install, clone the latest version from this repository into your cat
 
 ### Tests
 
-Package tests have not been implemented yet. You can run this command however if you want to watch Starwars Episode IV: 
+Package tests have not been implemented yet. You can run this command however to watch Starwars Episode IV in the terminal: 
 
 	telnet towel.blinkenlights.nl
 

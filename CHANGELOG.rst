@@ -4,23 +4,41 @@ Changelog for package scalaser
 
 TODO
 ------------------
-* find error that causes beta to randomly jump ~20° (probably caused by improper phase offset)
 
-  - solution_1: tracking of the motor encoders helps to determine if dx makes sense and changes dx accordingly
-  - solution_2: using the fminsearch results from the other side as start values reduces chances of dx beeing phaseoffset
-  - solution_3: filter which checks previous dx value and beta value and compares them to check if the difference make any sense
-  - solution_4: use boundary constrains of dx to "dx_old ± (stair-diagonal)/2" to stop phase offset completely
-  
-  - After succesfull implentation of the above methods, remove modulo constraint of beta to allow for wider angle determination range
-  
 * make fov_s, fov_d, dzi, phi0 dependant of the lambda position received from the MyRIO
 * create launch-file to start the full package node
+* create launch-file to start the visualization
+* test multiple fmincon algorithms on theire performance and accuracy
 
 NICE TO HAVE
 ------------------
-* change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical
 * add complete wheelchair model to visualtization
 * make stair grow and shrink dependant on distance traveled
+* (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical) 
+
+0.0.5 (2015-5-12)
+-----------------
+* now sets boundary constrains of dx to "dx_old ± (stair-diagonal)/2" to stop phase offset completely
+* change initializer vector v0 from <vector> to Eigen
+* now initializes v0 and boundry contraints with the start of the ros service. The result vector of the first matching are used as the start values for the first matching of the other side.
+* found error that causes beta to randomly jump ~20° caused by phase offset of dx_1 and dx_2
+
+  Approach:
+  - solution_1: tracking of the motor encoders helps to determine if dx makes sense and changes dx accordingly
+  - solution_2: using the fminsearch results from the other side as start values reduces chances of dx beeing phaseoffset
+  - solution_3: filter which checks previous dx value and beta value and compares them to check if the difference make any sense
+  - solution_4: use boundary constrains of dx to "dx_old ± (stair-diagonal)/2" to stop wrong phase offset
+  
+  After succesfull implentation of the above methods, the modulo constraint of beta can be removed to allow for wider angle determination range.
+  
+  - solution_1: discarded     - since it would make the program dependant on correct encoder values
+  - solution_2: implemented   - reduced the chance of getting phaseoffset dx values at the start of the programm to a very low percentage.
+  - solution_3: (implemented) - only implemented for beta. Filters betas which are more than 10° bigger or smaller than the previous one.
+  - solution_4: implemented   - reduced the phase offset of dx pretty good
+
+  As it turned out was the modulo constraint of beta the source of the randomly occuring phase offset at around 40 seconds in the bag file "up_turn_down_pointcloud.bag". It happend always when one dx was close to the modulo threshold while the other was bigger than the threshold. This lead to a big difference between dx_1 and dx_2 which led to a unexpected big beta.
+
+
 
 0.0.4 (2015-5-11)
 ------------------

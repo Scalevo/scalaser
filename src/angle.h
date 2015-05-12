@@ -50,7 +50,7 @@ private:
   double dzi;
   
   // Start Values of fminsearch() Vector
-  std::vector<double> v0;
+  Eigen::VectorXd v0;
   double a;
 
 
@@ -70,10 +70,14 @@ private:
   double kp;
   double threshold;
 
+  // counter
+  int count;
+
 public:
   Angle(ros::NodeHandle n_);
 
   void timerCallback(const ros::TimerEvent& event);
+  void initializeMatching();
 
   bool alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response);
 

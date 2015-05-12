@@ -2,24 +2,23 @@
 
 matlab::Engine matching::engine(true);  // Initialize static matlab engine
 
-matching::matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, std::vector<double> &v0_, int h_):
+matching::matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, Eigen::VectorXd v0_, int h_):
 n(n_),
 phi0(phi0_), dzi(dzi_), fov_s(fov_s_), fov_d(fov_d_), h(h_),
 xi(fov_d_), zi(fov_d_), xi_temp(fov_d_), zi_temp(fov_d_), xf(fov_d_), zf(fov_d_), z_r(fov_d_),
-v0(v0_.size()), v_r(v0_.size()), lb(v0_.size()), ub(v0_.size())
+v0(v0_),
+v_r(v0_.size()), lb(v0_.size()), ub(v0_.size()),
+se_r(0)
 {
   // engine.showWorkspace();
   n.param("/scalaser/threshold", threshold, 0.08);
   if (engine.good()) {ROS_INFO("Engine succesfully initialized.");}
   // Set path to matlab directory
   engine.changeWorkingDirectory("~/catkin_ws/src/scalaser/matlab");
-  // Copy std::vector into Eigen::VectorXf
-  for (int i=0; i < v0_.size(); ++i) v0(i) = v0_[i];
-  v_r = v0;
 
   // Initialize upper and lower bound vector for fminsearch
-  lb << 0.13, 0.20, 0, -10, -3.14;
-  ub << 0.20, 0.50, .33, 10, 3.14;
+  lb << 0.13, 0.21, -0.4, -10, -3.14;
+  ub << 0.20, 0.50, 0.4, 10, 3.14;
 }
 
 
@@ -38,13 +37,11 @@ void matching::transformMsg(const sensor_msgs::PointCloud::ConstPtr& msg) {
   }
 }
 
-
 void matching::matchTemplate() {
-   // fillMatfile();
-  fillEngine();
+  fillMatfile();
+  // fillEngine();
   publishSe_r();
 }
-
 
 void matching::publishSe_r() {
     std_msgs::Float64 se_rM;
@@ -55,8 +52,15 @@ void matching::publishSe_r() {
     se_r_pub.publish(se_rM);
 }
 
+void matching::setFminArgs(Eigen::VectorXd v_r_) {
+  v0 = v_r_;
+  lb(2) = v0(2) - sqrt(v0(1)*v0(1) + v0(0)*v0(0))/2;
+  ub(2) = v0(2) + sqrt(v0(1)*v0(1) + v0(0)*v0(0))/2;
+  // ROS_INFO("Lower boundary: %f",lb(2));
+  // ROS_INFO("Upper boundary: %f",ub(2));
+}
 
-void matching::updateParameters(double phi0_,double dzi_,int fov_s_,int fov_d_) {
+void matching::setParameters(double phi0_,double dzi_,int fov_s_,int fov_d_) {
   phi0 = phi0_;
   dzi = dzi_;
   fov_s = fov_s_;
@@ -73,9 +77,6 @@ void matching::fillMatfile() {
   file.put("h", h);
   file.put("lb", lb);
   file.put("ub", ub);
-
-  // Check if solution satisfies threshold
-  if (se_r < threshold) v0 = v_r;
   file.put("v0", v0);
 
   engine.executeCommand("load('stairparam.mat')");
@@ -92,7 +93,12 @@ void matching::fillMatfile() {
   // ROS_INFO("__________________________________");
 
   // engine.executeCommand("test(xi,zi,h)");
+
+  double before = ros::Time::now().toSec();
   engine.executeCommand("[v_r, se_r, z_r, xf, zf] = stairparam(xi, zi, v0, h, lb, ub);");
+  double after = ros::Time::now().toSec();
+  // ROS_INFO("Time to compute fmincon %f", after - before);
+
   engine.executeCommand("save('stairparam.mat')");
 
   file.open("~/catkin_ws/src/scalaser/matlab/stairparam.mat", matlab::MatFile::READ);
@@ -119,9 +125,15 @@ void matching::fillMatfile() {
   // ROS_INFO("__________________________________");
   // ROS_INFO("__________________________________");
 
-  if (se_r > threshold) ROS_WARN("Pointcloud has not been matched properly. Error: %f", se_r);
 
-  lb(2) = -10; // Set lower bound of phase of set to ~INF
+  // Check if solution satisfies threshold
+
+  if (se_r < threshold) {
+    setFminArgs(v_r);
+  }
+  else {
+    ROS_WARN("Pointcloud has not been matched properly. Error: %f", se_r);
+  }
 }
 
 void matching::fillEngine() {

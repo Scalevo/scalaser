@@ -1,10 +1,10 @@
 #include "angle.h"
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_),a(.7),v_s(5),beta_old(0),v0{0.17,0.3,0.0,0.0,0.0}
+n(n_), a(.7), v_s(5), beta_old(0), v0(5), count(0)
 {
   setParameters();
-
+  v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
   phi0 = phi0*3.14/180;
 
   ROS_INFO("Phi0: %f",phi0);
@@ -13,23 +13,23 @@ n(n_),a(.7),v_s(5),beta_old(0),v0{0.17,0.3,0.0,0.0,0.0}
   ROS_INFO("Dz Initial: %f",dzi);
 
   // ROS_INFO("Start Values for fminsearch:");
-  // ROS_INFO("stair heigth________h0 = %f",v0[0]); 
-  // ROS_INFO("stair depth_________t0 = %f",v0[1]);
-  // ROS_INFO("phase offset_______dx0 = %f",v0[2]);
-  // ROS_INFO("sensor height______dz0 = %f",v0[3]);
-  // ROS_INFO("sensor rotation___phi0 = %f",v0[4]);
+  // ROS_INFO("stair heigth________h0 = %f",v0(0); 
+  // ROS_INFO("stair depth_________t0 = %f",v0(1);
+  // ROS_INFO("phase offset_______dx0 = %f",v0(2);
+  // ROS_INFO("sensor height______dz0 = %f",v0(3);
+  // ROS_INFO("sensor rotation___phi0 = %f",v0(4);
 
   // create & asssign temporary matching object
   matching cloud_1_t(n_,phi0,dzi,fov_s,fov_d,v0,1);
   matching cloud_2_t(n_,phi0,dzi,811-fov_s-fov_d,fov_d,v0,2);
-
   cloud_1 = cloud_1_t;
   cloud_2 = cloud_2_t;
 
-  main_timer = n.createTimer(ros::Duration(0.25),&Angle::timerCallback,this,false);
+  // initialize main timer
+  main_timer = n.createTimer(ros::Duration(0.25),&Angle::timerCallback,this,false,false);
 
   // initialize service
-  ros::ServiceServer service = n.advertiseService("align_wheelchair",&Angle::alignWheelchair,this);
+  service = n.advertiseService("align_wheelchair",&Angle::alignWheelchair,this);
 
   ROS_INFO("Service started. Waiting for input.");
 
@@ -46,6 +46,9 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     pub_1 = n.advertise<std_msgs::Float64>("/beta",100);
     pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",100);
     pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/velocity",100);
+
+    // initialize matching
+    initializeMatching();
 
     // start main loop timer
     main_timer.start();
@@ -68,30 +71,42 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     main_timer.stop();
 
     ROS_INFO("Wheelchair alignment has been stopped.");
+    ROS_INFO("Angle computation has been executed %d times", count);
     return true;
   }
   return true;
 }
 
-void Angle::timerCallback(const ros::TimerEvent& event)
-{
+void Angle::initializeMatching() {
+  count = 0;
+  cloud_1.setData();
+  cloud_2.setData();
+  cloud_1.setFminArgs(v0);
+  cloud_1.matchTemplate();
+  cloud_2.setFminArgs(cloud_1.getV_r());
+  cloud_2.matchTemplate();
+  count++;
+}
+
+void Angle::timerCallback(const ros::TimerEvent& event) {
   if (sub_1.getNumPublishers() > 0 && sub_2.getNumPublishers() > 0) {
     cloud_1.setData();
     cloud_2.setData();
     cloud_1.matchTemplate();
     cloud_2.matchTemplate();
+
     computeAngle();
     computeStair();
     computeVelocity();
     setPosition();
-    ROS_INFO("Callback time: %f",event.profile.last_duration.toSec());
+    ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
+    count++;
   }
 }
 
-void Angle::computeAngle()
-{
+void Angle::computeAngle() {
   beta_new = 180/3.1415*atan((cloud_2.getDx()-cloud_1.getDx())/a);
- 
+
   if ( fabs(beta_old - beta_new) < 10)
     {
       beta.data = beta_new;
@@ -104,16 +119,14 @@ void Angle::computeAngle()
   beta_old = beta.data;
 }
 
-void Angle::computeStair()
-{
+void Angle::computeStair() {
   v_s = (cloud_1.getV_r()+cloud_2.getV_r())/2*cos(beta.data*3.14/180);
   stair_param.data.clear();
   for (int i=0;i<5;i++)  stair_param.data.push_back(v_s(i));
   pub_2.publish(stair_param);
 }
 
-void Angle::computeVelocity()
-{
+void Angle::computeVelocity() {
   n.param("/scalaser/kp",kp,10.0);
   velocity.data.clear();
   velocity.data.push_back(0);
@@ -127,10 +140,7 @@ void Angle::computeVelocity()
   pub_velocity.publish(velocity);
 }
 
-
-
-void Angle::setPosition()
-{
+void Angle::setPosition() {
 
   double h = v_s(0);
   double t = v_s(1);
@@ -147,8 +157,7 @@ void Angle::setPosition()
   ROS_INFO_ONCE("Transform to stair sent");
 }
 
-void Angle::setParameters()
-{
+void Angle::setParameters() {
   n.param("/scalaser/fov_s",fov_s,200);
   n.param("/scalaser/fov_d",fov_d,150);
   n.param("/scalaser/dzi",dzi,.65);

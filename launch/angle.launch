@@ -8,7 +8,6 @@
   <param name="/scalaser/dzi" type="double" value=".62" />
   <param name="/scalaser/phi" type="double" value="-35" />
   <param name="/scalaser/kp" type="double" value="10" />
-  <param name="/scalaser/threshold" type="double" value="0.008" />
-
+  <param name="/scalaser/threshold" type="double" value="0.010" />
 
 </launch>
