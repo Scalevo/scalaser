@@ -11,8 +11,8 @@ int main( int argc, char** argv )
   ros::Rate loop_rate(2); // [Hz]
   while (ros::ok())
   {
-    stair.SetPosition();
-    stair.PublishModel();
+    stair.setPosition();
+    stair.publishModel();
     loop_rate.sleep();
     ros::spinOnce();
   }

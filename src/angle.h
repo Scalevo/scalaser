@@ -3,6 +3,7 @@
 
 #include <boost/cstdint.hpp>
 #include <math.h>
+#include <fstream>
 
 #include "ros/ros.h"
 #include "std_msgs/Float64.h"
@@ -56,6 +57,12 @@ private:
 
   // Average of results of fminsearch
   Eigen::VectorXd v_s;
+
+  // Vectors for Result evaluation
+  double time_start;
+  std::vector<double> beta_vector;
+  std::vector<double> time_vector;
+
 
   // Messages
   std_msgs::Float64MultiArray stair_param;

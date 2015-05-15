@@ -1,7 +1,7 @@
 #include "angle.h"
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_), a(.7), v_s(5), beta_old(0), v0(5), count(0)
+n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0)
 {
   setParameters();
   v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
@@ -38,6 +38,7 @@ n(n_), a(.7), v_s(5), beta_old(0), v0(5), count(0)
 
 bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response) {
   if (request.on) {
+
     // create subscriber
     sub_1 = n.subscribe("cloud_1",1, &matching::matchCallback, &cloud_1);
     sub_2 = n.subscribe("cloud_2",1, &matching::matchCallback, &cloud_2);
@@ -52,9 +53,10 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
     // start main loop timer
     main_timer.start();
-
+    
     ROS_INFO("Wheelchair alignment has been started.");
-    return true;
+    return true;  
+
   }
 
   else if (!request.on) {
@@ -72,20 +74,22 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
     ROS_INFO("Wheelchair alignment has been stopped.");
     ROS_INFO("Angle computation has been executed %d times", count);
+
+    // write beta and time to text file in order to plot it later in matlab
+
+    std::ofstream file_beta;
+    file_beta.open("/home/miro/Desktop/cpp2matlab/beta_vector.txt");
+    for(std::size_t i = 0; i < beta_vector.size(); ++i) file_beta << beta_vector[i] << std::endl;
+    file_beta.close();
+
+    std::ofstream file_time;
+    file_time.open("/home/miro/Desktop/cpp2matlab/time_vector.txt");
+    for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
+    file_time.close();
+
     return true;
   }
   return true;
-}
-
-void Angle::initializeMatching() {
-  count = 0;
-  cloud_1.setData();
-  cloud_2.setData();
-  cloud_1.setFminArgs(v0);
-  cloud_1.matchTemplate();
-  cloud_2.setFminArgs(cloud_1.getV_r());
-  cloud_2.matchTemplate();
-  count++;
 }
 
 void Angle::timerCallback(const ros::TimerEvent& event) {
@@ -104,6 +108,22 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
   }
 }
 
+void Angle::initializeMatching() {
+  time_start = ros::Time::now().toSec();
+  ROS_INFO("Start time: %f",time_start);
+
+  beta_new = 0;
+  beta_old = 0;
+  count = 0;
+  cloud_1.setData();
+  cloud_2.setData();
+  cloud_1.setFminArgs(v0);
+  cloud_1.matchTemplate();
+  cloud_2.setFminArgs(cloud_1.getV_r());
+  cloud_2.matchTemplate();
+  count++;
+}
+
 void Angle::computeAngle() {
   beta_new = 180/3.1415*atan((cloud_2.getDx()-cloud_1.getDx())/a);
 
@@ -111,6 +131,10 @@ void Angle::computeAngle() {
     {
       beta.data = beta_new;
       pub_1.publish(beta);
+
+      ROS_INFO("Time: %f",ros::Time::now().toSec()-time_start);
+      time_vector.push_back(ros::Time::now().toSec()-time_start);
+      beta_vector.push_back(beta_new);
     }
   else {
     ROS_WARN("No beta published since unreasonable values occured.");

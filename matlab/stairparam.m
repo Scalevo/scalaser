@@ -10,18 +10,18 @@ handle = @delta;
 options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
 
 
-% [v_r,se_r] = fminsearch(handle,v0_,options);
-[v_r,se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub);
+[v_r,se_r] = fminsearch(handle,v0_,options);
+% [v_r,se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub);
 
 %disp(v_r);
 
-        % subplot(2,1,hs);
-        % plot(xi,zi,'x');
-        % axis equal tight
-        % hold on;
-        % plot(xi,z_r,'o')
-        % axis equal tight
-        % hold off;
+        subplot(2,1,hs);
+        plot(xi,zi,'x');
+        axis equal tight
+        hold on;
+        plot(xi,z_r,'o')
+        axis equal tight
+        hold off;
 
 
 %% Delta function - calculates the difference between real-z and template-z

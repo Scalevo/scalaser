@@ -72,9 +72,9 @@ void Laser2Stair::SetPosition()
 {
   transform.setOrigin( tf::Vector3(-(cos(phi)*dx + sin(phi)*dz),0,-(-sin(phi)*dx + cos(phi)*dz)) );
   tf::Quaternion q;
-  q.setRPY(0,phi,-beta*3.14/180);
+  q.setRPY(0, 0, -beta*3.14/180);
   transform.setRotation(q);
-  br.sendTransform(tf::StampedTransform(transform,ros::Time::now(),"laser_mount_link","stair_middle"));
+  br.sendTransform(tf::StampedTransform(transform,ros::Time::now(),"laser_mount_link","stair_middle_upright"));
   //ROS_INFO("POSITION SET");
 }
 

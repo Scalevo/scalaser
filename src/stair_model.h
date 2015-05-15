@@ -27,13 +27,17 @@ private:
   double phi0;
   double dz0;
 
+  // stair viz parameters
+  double stair_bot;
+  double stair_top;
+
 public:
   StairModel(ros::NodeHandle n,std::string frame_id_);
-  void InitMarker(std::string frame_id);
-  void SetPosition();
-  void PublishModel();
-  void StairCallback(const std_msgs::Float64MultiArray::ConstPtr& stair_param);
-  void BetaCallback(const std_msgs::Float64::ConstPtr& angle);
+  void initMarker(std::string frame_id);
+  void setPosition();
+  void publishModel();
+  void stairCallback(const std_msgs::Float64MultiArray::ConstPtr& stair_param);
+  void betaCallback(const std_msgs::Float64::ConstPtr& angle);
 
 };
 
