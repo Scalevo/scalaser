@@ -5,7 +5,7 @@ n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0)
 {
   setParameters();
   v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
-  phi0 = phi0*3.14/180;
+  phi0 = phi0*PI/180;
 
   ROS_INFO("Phi0: %f",phi0);
   ROS_INFO("Field of View Start: %d",fov_s);
@@ -48,12 +48,16 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",100);
     pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/velocity",100);
 
+    while (sub_1.getNumPublishers() == 0 || sub_2.getNumPublishers() == 0) {
+      sleep(1);
+    }    
+
     // initialize matching
     initializeMatching();
 
     // start main loop timer
     main_timer.start();
-    
+
     ROS_INFO("Wheelchair alignment has been started.");
     return true;  
 
@@ -69,23 +73,18 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     pub_2.shutdown();
     pub_velocity.shutdown();
 
+
     // stop main loop timer
     main_timer.stop();
 
     ROS_INFO("Wheelchair alignment has been stopped.");
-    ROS_INFO("Angle computation has been executed %d times", count);
+    ROS_INFO("Nr of computations: %d", count);
+    ROS_INFO("Duration:           %f", ros::Time::now().toSec() - time_start);
+    ROS_INFO("Average frequency:  %f Hz",count/(ros::Time::now().toSec() - time_start));
 
-    // write beta and time to text file in order to plot it later in matlab
+    // plot data in a new matlab engine
+    plot_data();
 
-    std::ofstream file_beta;
-    file_beta.open("/home/miro/Desktop/cpp2matlab/beta_vector.txt");
-    for(std::size_t i = 0; i < beta_vector.size(); ++i) file_beta << beta_vector[i] << std::endl;
-    file_beta.close();
-
-    std::ofstream file_time;
-    file_time.open("/home/miro/Desktop/cpp2matlab/time_vector.txt");
-    for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
-    file_time.close();
 
     return true;
   }
@@ -93,7 +92,7 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 }
 
 void Angle::timerCallback(const ros::TimerEvent& event) {
-  if (sub_1.getNumPublishers() > 0 && sub_2.getNumPublishers() > 0) {
+  
     cloud_1.setData();
     cloud_2.setData();
     cloud_1.matchTemplate();
@@ -105,7 +104,7 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     setPosition();
     ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     count++;
-  }
+  
 }
 
 void Angle::initializeMatching() {
@@ -125,7 +124,7 @@ void Angle::initializeMatching() {
 }
 
 void Angle::computeAngle() {
-  beta_new = 180/3.1415*atan((cloud_2.getDx()-cloud_1.getDx())/a);
+  beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
 
   if ( fabs(beta_old - beta_new) < 10)
     {
@@ -144,7 +143,7 @@ void Angle::computeAngle() {
 }
 
 void Angle::computeStair() {
-  v_s = (cloud_1.getV_r()+cloud_2.getV_r())/2*cos(beta.data*3.14/180);
+  v_s = (cloud_1.getV_r()+cloud_2.getV_r())/2*cos(beta.data*PI/180);
   stair_param.data.clear();
   for (int i=0;i<5;i++)  stair_param.data.push_back(v_s(i));
   pub_2.publish(stair_param);
@@ -155,7 +154,7 @@ void Angle::computeVelocity() {
   velocity.data.clear();
   velocity.data.push_back(0);
   if(cloud_1.getSe_r()<threshold && cloud_2.getSe_r()<threshold)
-    {velocity.data.push_back(-beta.data*3.1415/180*kp);}
+    {velocity.data.push_back(-beta.data*PI/180*kp);}
   else {
     velocity.data.push_back(0);
     ROS_WARN("No velocity published since matching didn't work properly.");
@@ -171,11 +170,10 @@ void Angle::setPosition() {
   double dx = -v_s(2);
   double dz = dzi+v_s(3);
   double phi = -phi0-v_s(4);
-  double theta = atan(t/h);
 
   transform.setOrigin( tf::Vector3(-(cos(phi)*dx + sin(phi)*dz),0,-(-sin(phi)*dx + cos(phi)*dz)) );
   tf::Quaternion q;
-  q.setRPY(0,phi,-beta.data*3.14/180);
+  q.setRPY(0,phi,-beta.data*PI/180);
   transform.setRotation(q);
   br.sendTransform(tf::StampedTransform(transform,ros::Time::now(),"laser_mount_link","stair_middle"));
   ROS_INFO_ONCE("Transform to stair sent");
@@ -185,7 +183,31 @@ void Angle::setParameters() {
   n.param("/scalaser/fov_s",fov_s,200);
   n.param("/scalaser/fov_d",fov_d,150);
   n.param("/scalaser/dzi",dzi,.65);
-  n.param("/scalaser/phi",phi0,-43*3.14/180);
+  n.param("/scalaser/phi",phi0,-43*PI/180);
   n.param("/scalaser/kp",kp,10.0);
   n.param("/scalaser/threshold",threshold,0.08);
+}
+
+void Angle::plot_data() {
+  // plot_engine.initialize();
+  if (plot_engine.initialize() && plot_engine.good()) {ROS_INFO("Plot engine succesfully initialized.");}
+
+  Eigen::VectorXd beta_vectorXd(beta_vector.size());
+  Eigen::VectorXd time_vectorXd(time_vector.size());
+  for (int i=0; i < beta_vector.size(); ++i) beta_vectorXd(i) = beta_vector[i];
+  for (int i=0; i < time_vector.size(); ++i) time_vectorXd(i) = time_vector[i];
+
+  plot_engine.put("beta_vector",beta_vectorXd);
+  plot_engine.put("time_vector",time_vectorXd);
+  plot_engine.executeCommand("plot(time_vector,beta_vector)");
+
+  // std::ofstream file_beta;
+  // file_beta.open("/home/miro/Desktop/cpp2matlab/beta_vector.txt");
+  // for(std::size_t i = 0; i < beta_vector.size(); ++i) file_beta << beta_vector[i] << std::endl;
+  // file_beta.close();
+
+  // std::ofstream file_time;
+  // file_time.open("/home/miro/Desktop/cpp2matlab/time_vector.txt");
+  // for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
+  // file_time.close();
 }

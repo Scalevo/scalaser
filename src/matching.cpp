@@ -17,8 +17,8 @@ se_r(0)
   engine.changeWorkingDirectory("~/catkin_ws/src/scalaser/matlab");
 
   // Initialize upper and lower bound vector for fminsearch
-  lb << 0.13, 0.21, -0.4, -10, -3.14;
-  ub << 0.20, 0.50, 0.4, 10, 3.14;
+  lb << 0.13, 0.21, -0.4, -10, -PI;
+  ub << 0.20, 0.50, 0.4, 10, PI;
 }
 
 

@@ -7,11 +7,11 @@ function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0, z0, v0_, hs, lb ,ub )
 %% Minimize delta for v
 
 handle = @delta;
-options = struct('MaxFunEvals',10000,'MaxIter',10000); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
+options = struct('Algorithm', 'active-set', 'MaxFunEvals', 10000, 'MaxIter', 10000); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
 
 
-[v_r,se_r] = fminsearch(handle,v0_,options);
-% [v_r,se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub);
+% [v_r,se_r] = fminsearch(handle,v0_,options);
+[v_r,se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub, [],options);
 
 %disp(v_r);
 

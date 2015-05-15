@@ -8,7 +8,6 @@ TODO
 * make fov_s, fov_d, dzi, phi0 dependant of the lambda position received from the MyRIO
 * create launch-file to start the full package node
 * test multiple fmincon algorithms on theire performance and accuracy
-* plot beta and error to file and afterwards in matlab
 * if beta values are different for to long resinitialize computation
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
 * try to reduce FoV to increase performance.
@@ -17,16 +16,22 @@ TODO
 NICE TO HAVE
 ------------------
 * fix track marker
-* make stair grow and shrink dependant on distance traveled
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * change tf static to tf2 static.
 
+0.0.7 (2015-5-15)
+-----------------
+* now plots beta after service is finished
+* replaced all 3.14 values with PI
+* service now only starts the initialization if pointclouds are published
+
 0.0.6 (2015-5-13)
 -----------------
-* reset beta_old and beta_new before restarting service
+* resets beta_old and beta_new before restarting service
 * added complete wheelchair model to visualtization
 * created launch-file to start the visualization (stair_viz.launch)
-
+* added rviz file
+* stair visualization now grows dependant on distance traveled on the stairs
 
 0.0.5 (2015-5-12)
 -----------------

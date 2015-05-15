@@ -10,10 +10,12 @@
 #include "std_msgs/Float64MultiArray.h"
 #include <tf/transform_broadcaster.h>
 #include "scalevo_msgs/Starter.h"
+#include "matlabCppInterface/Engine.hpp"
+#include "matlabCppInterface/MatFile.hpp"
 
 #include "matching.h"
 
-
+#define PI 3.14159265
 
 
 class Angle{
@@ -21,6 +23,7 @@ class Angle{
 private:
   ros::NodeHandle n;
 
+  matlab::Engine plot_engine;
   // Status Server
   ros::ServiceServer service;
 
@@ -64,6 +67,7 @@ private:
   std::vector<double> time_vector;
 
 
+
   // Messages
   std_msgs::Float64MultiArray stair_param;
   std_msgs::Float64 beta;
@@ -94,6 +98,8 @@ public:
 
   void setPosition();
   void setParameters();
+
+  void plot_data();
 };
 
 #endif

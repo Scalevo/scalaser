@@ -13,7 +13,7 @@
 #include "matlabCppInterface/Engine.hpp"
 #include "matlabCppInterface/MatFile.hpp"
 
-
+#define PI 3.14159265
 
 
 class matching{
