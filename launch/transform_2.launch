@@ -3,5 +3,7 @@
 
   <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 -.35 0 -1.57 1.57 0 laser_mount_link laser_1 10" />
   <node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="0 .35 0 1.57 1.57 0 laser_mount_link laser_2 10" />
+<!--   <node pkg="tf" type="static_transform_publisher" name="base_laser_mount_broadcaster" args=".24 0 .18 0 0 0 base laser_mount_link 10" /> -->
+
 
 </launch>

@@ -1,7 +1,8 @@
 #include "angle.h"
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0)
+n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0),
+r_h(.1016), s(.653837), phi_f(.193897)
 {
   setParameters();
   v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
@@ -40,8 +41,10 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
   if (request.on) {
 
     // create subscriber
-    sub_1 = n.subscribe("cloud_1",1, &matching::matchCallback, &cloud_1);
-    sub_2 = n.subscribe("cloud_2",1, &matching::matchCallback, &cloud_2);
+    sub_1 = n.subscribe("cloud_1", 1, &matching::matchCallback, &cloud_1);
+    sub_2 = n.subscribe("cloud_2", 1, &matching::matchCallback, &cloud_2);
+
+    sub_joint = n.subscribe("/joint_states", 1, &Angle::jointCallback, this);
 
     // advertise topics
     pub_1 = n.advertise<std_msgs::Float64>("/beta",100);
@@ -70,13 +73,13 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     // shutdown subscribers
     sub_1.shutdown();
     sub_2.shutdown();
+    sub_joint.shutdown();
     
     // shutdown publishers
     pub_1.shutdown();
     pub_2.shutdown();
     // pub_velocity.shutdown();
     pub_s_velocity.shutdown();
-
 
     // stop main loop timer
     main_timer.stop();
@@ -88,7 +91,6 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
     // plot data in a new matlab engine
     plot_data();
-
 
     return true;
   }
@@ -112,13 +114,26 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
   }
 }
 
+void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) {
+  phi0 = joint_state->position[0];
+  dzi = r_h + s*sin(phi0 + phi_f);
+  cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
+  cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
+  ROS_INFO("Matching Parameters have been updated.");
+}
+
 void Angle::initializeMatching() {
+
+  setParameters();
 
   beta_new = 0;
   beta_old = 0;
   beta_vector.clear();
   time_vector.clear();
   count = 0;
+
+  cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
+  cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
 
   time_start = ros::Time::now().toSec();
   ROS_INFO("Start time: %f",time_start);
@@ -176,10 +191,6 @@ void Angle::computeVelocity() {
   buff<<beta.data*kp;
   velo.data += buff.str();
 
-
-  // double test = beta.data*kp;
-  // velo += (std::string)(test);
-
   pub_s_velocity.publish(velo);
 }
 
@@ -232,7 +243,3 @@ void Angle::plot_data() {
   // for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
   // file_time.close();
 }
-
-// void Angle::updateParameters() {
-  
-// }

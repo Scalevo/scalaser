@@ -9,10 +9,13 @@
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/String.h"
-#include <tf/transform_broadcaster.h>
-#include "scalevo_msgs/Starter.h"
+#include "sensor_msgs/JointState.h"
+#include "tf/transform_broadcaster.h"
 #include "matlabCppInterface/Engine.hpp"
 #include "matlabCppInterface/MatFile.hpp"
+
+#include "scalevo_msgs/Starter.h"
+
 
 #include "matching.h"
 
@@ -31,6 +34,8 @@ private:
   // Subscribers
   ros::Subscriber sub_1;
   ros::Subscriber sub_2;
+
+  ros::Subscriber sub_joint;
 
   // Publishers
   ros::Publisher pub_1;		     // beta
@@ -56,6 +61,11 @@ private:
   int fov_d;
   double phi0;
   double dzi;
+
+  // Wheelchair Parameters
+  double r_h;
+  double s;
+  double phi_f;
   
   // Start Values of fminsearch() Vector
   Eigen::VectorXd v0;
@@ -91,8 +101,9 @@ private:
 public:
   Angle(ros::NodeHandle n_);
 
-  void timerCallback(const ros::TimerEvent& event);
   void initializeMatching();
+  void timerCallback(const ros::TimerEvent& event);
+  void jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state);
 
   bool alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response);
 

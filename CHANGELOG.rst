@@ -5,19 +5,24 @@ Changelog for package scalaser
 TODO
 ------------------
 
-* make fov_s, fov_d, dzi, phi0 dependant of the lambda position received from the MyRIO
 * create launch-file to start the full package node
 * test multiple fmincon algorithms on theire performance and accuracy
 * test multiple FoV configs on theire performance and accuracy
 * if beta values are different for to long reinitialize computation
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
-* make fov_s & fov_d editable during runtime
 
 NICE TO HAVE
 ------------------
-* fix track marker
+* make fov_s, fov_d dependant of the lambda position received from the MyRIO
+* make fov_s & fov_d editable during runtime
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
+
+0.0.8 (2015-5-18)
+-----------------
+* robot model of the wheelchair has been created in the package SCALEBOT 
+* dzi, phi0 are now computed out of the lambda positions received from the MyRIO -> this might only be needed during initialization to save computation time.
+* a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server
 
 0.0.7 (2015-5-15)
 -----------------
