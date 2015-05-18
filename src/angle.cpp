@@ -1,7 +1,7 @@
 #include "angle.h"
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0),
+n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0), wrong_beta_count(0),
 r_h(.1016), s(.653837), phi_f(.193897)
 {
   setParameters();
@@ -27,7 +27,7 @@ r_h(.1016), s(.653837), phi_f(.193897)
   cloud_2 = cloud_2_t;
 
   // initialize main timer
-  main_timer = n.createTimer(ros::Duration(0.25),&Angle::timerCallback,this,false,false);
+  main_timer = n.createTimer(ros::Duration(0.5),&Angle::timerCallback,this,false,false);
 
   // initialize service
   service = n.advertiseService("align_wheelchair",&Angle::alignWheelchair,this);
@@ -115,8 +115,8 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
 }
 
 void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) {
-  phi0 = joint_state->position[0];
-  dzi = r_h + s*sin(phi0 + phi_f);
+  phi0 = -joint_state->position[0];
+  dzi = r_h + s*sin(-phi0 + phi_f);
   cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
   cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
   ROS_INFO("Matching Parameters have been updated.");
@@ -150,18 +150,21 @@ void Angle::initializeMatching() {
 void Angle::computeAngle() {
   beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
 
-  if ( fabs(beta_old - beta_new) < 10)
-    {
-      beta.data = beta_new;
-      pub_1.publish(beta);
+  if ( fabs(beta_old - beta_new) < 10) {
+    beta.data = beta_new;
+    pub_1.publish(beta);
 
-      ROS_INFO("Time: %f",ros::Time::now().toSec()-time_start);
-      time_vector.push_back(ros::Time::now().toSec()-time_start);
-      beta_vector.push_back(beta_new);
-    }
+    ROS_INFO("Time: %f",ros::Time::now().toSec()-time_start);
+    time_vector.push_back(ros::Time::now().toSec()-time_start);
+    beta_vector.push_back(beta_new);
+
+    wrong_beta_count = 0;
+  }
   else {
     ROS_WARN("No beta published since unreasonable values occured.");
     ROS_WARN("Refused beta: %f",beta_new);
+    wrong_beta_count++;
+    if (wrong_beta_count > 3) {initializeMatching();}
   }
   beta_old = beta.data;
 }

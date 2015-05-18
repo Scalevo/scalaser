@@ -5,11 +5,11 @@ Changelog for package scalaser
 TODO
 ------------------
 
+* Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
+*-----------------
 * create launch-file to start the full package node
 * test multiple fmincon algorithms on theire performance and accuracy
 * test multiple FoV configs on theire performance and accuracy
-* if beta values are different for to long reinitialize computation
-* Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
 
 NICE TO HAVE
 ------------------
@@ -23,6 +23,7 @@ NICE TO HAVE
 * robot model of the wheelchair has been created in the package SCALEBOT 
 * dzi, phi0 are now computed out of the lambda positions received from the MyRIO -> this might only be needed during initialization to save computation time.
 * a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server
+* if beta values are unusual for a number of computations, matching gets reinitialized
 
 0.0.7 (2015-5-15)
 -----------------

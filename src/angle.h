@@ -97,6 +97,7 @@ private:
 
   // counter
   int count;
+  int wrong_beta_count;
 
 public:
   Angle(ros::NodeHandle n_);

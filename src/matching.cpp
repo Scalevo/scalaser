@@ -92,7 +92,7 @@ void matching::fillMatfile() {
   // ROS_INFO("sensor rotation___phi0 = %f",v_r(4));
   // ROS_INFO("__________________________________");
 
-  engine.executeCommand("test(xi,zi,h)");
+  // engine.executeCommand("test(xi,zi,h)");
 
   double before = ros::Time::now().toSec();
   engine.executeCommand("[v_r, se_r, z_r, xf, zf] = stairparam(xi, zi, v0, h, lb, ub);");
