@@ -46,7 +46,10 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     // advertise topics
     pub_1 = n.advertise<std_msgs::Float64>("/beta",100);
     pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",100);
-    pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/velocity",100);
+    // pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/set_vel",100);
+
+    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",100);
+
 
     while (sub_1.getNumPublishers() == 0 || sub_2.getNumPublishers() == 0) {
       sleep(1);
@@ -71,7 +74,8 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     // shutdown publishers
     pub_1.shutdown();
     pub_2.shutdown();
-    pub_velocity.shutdown();
+    // pub_velocity.shutdown();
+    pub_s_velocity.shutdown();
 
 
     // stop main loop timer
@@ -92,7 +96,8 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 }
 
 void Angle::timerCallback(const ros::TimerEvent& event) {
-  
+  if (sub_1.getNumPublishers() > 0 && sub_2.getNumPublishers() > 0) {
+
     cloud_1.setData();
     cloud_2.setData();
     cloud_1.matchTemplate();
@@ -104,16 +109,20 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     setPosition();
     ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     count++;
-  
+  }
 }
 
 void Angle::initializeMatching() {
-  time_start = ros::Time::now().toSec();
-  ROS_INFO("Start time: %f",time_start);
 
   beta_new = 0;
   beta_old = 0;
+  beta_vector.clear();
+  time_vector.clear();
   count = 0;
+
+  time_start = ros::Time::now().toSec();
+  ROS_INFO("Start time: %f",time_start);
+
   cloud_1.setData();
   cloud_2.setData();
   cloud_1.setFminArgs(v0);
@@ -150,17 +159,28 @@ void Angle::computeStair() {
 }
 
 void Angle::computeVelocity() {
-  n.param("/scalaser/kp",kp,10.0);
-  velocity.data.clear();
-  velocity.data.push_back(0);
-  if(cloud_1.getSe_r()<threshold && cloud_2.getSe_r()<threshold)
-    {velocity.data.push_back(-beta.data*PI/180*kp);}
-  else {
-    velocity.data.push_back(0);
-    ROS_WARN("No velocity published since matching didn't work properly.");
-  }
+  n.param("/scalaser/kp",kp,1.0);
+  // velocity.data.clear();
+  // velocity.data.push_back(0);
+  // if(cloud_1.getSe_r()<threshold && cloud_2.getSe_r()<threshold)
+  //   {velocity.data.push_back(-beta.data*PI/180*kp);}
+  // else {
+  //   velocity.data.push_back(0);
+  //   ROS_WARN("No velocity published since matching didn't work properly.");
+  // }
 
-  pub_velocity.publish(velocity);
+  std_msgs::String velo;
+  velo.data = "set_vel,0,"; 
+
+  std::ostringstream buff;
+  buff<<beta.data*kp;
+  velo.data += buff.str();
+
+
+  // double test = beta.data*kp;
+  // velo += (std::string)(test);
+
+  pub_s_velocity.publish(velo);
 }
 
 void Angle::setPosition() {
@@ -194,11 +214,12 @@ void Angle::plot_data() {
 
   Eigen::VectorXd beta_vectorXd(beta_vector.size());
   Eigen::VectorXd time_vectorXd(time_vector.size());
-  for (int i=0; i < beta_vector.size(); ++i) beta_vectorXd(i) = beta_vector[i];
-  for (int i=0; i < time_vector.size(); ++i) time_vectorXd(i) = time_vector[i];
+  for (int i=0; i < beta_vector.size(); ++i) beta_vectorXd[i] = beta_vector[i];
+  for (int i=0; i < time_vector.size(); ++i) time_vectorXd[i] = time_vector[i];
 
   plot_engine.put("beta_vector",beta_vectorXd);
   plot_engine.put("time_vector",time_vectorXd);
+  plot_engine.executeCommand("clf('reset')");
   plot_engine.executeCommand("plot(time_vector,beta_vector)");
 
   // std::ofstream file_beta;
@@ -211,3 +232,7 @@ void Angle::plot_data() {
   // for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
   // file_time.close();
 }
+
+// void Angle::updateParameters() {
+  
+// }

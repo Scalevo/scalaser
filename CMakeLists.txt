@@ -6,13 +6,18 @@ set(CMAKE_CXX_FLAGS "--std=c++11")
 find_package(catkin REQUIRED COMPONENTS
   laser_geometry
   roscpp
+  rospy
   sensor_msgs
   geometry_msgs
   visualization_msgs
   scalevo_msgs
   tf
   matlab_cpp_interface
+  # urdf
 )
+
+set(CMAKE_BUILD_TYPE DEBUG)
+
 
 catkin_package(
   INCLUDE_DIRS include
@@ -22,6 +27,7 @@ catkin_package(
   laser_assembler
   laser_geometry
   roscpp
+  
   sensor_msgs
   visualization_msgs
   message_filters

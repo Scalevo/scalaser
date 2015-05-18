@@ -8,6 +8,7 @@
 #include "ros/ros.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
+#include "std_msgs/String.h"
 #include <tf/transform_broadcaster.h>
 #include "scalevo_msgs/Starter.h"
 #include "matlabCppInterface/Engine.hpp"
@@ -34,7 +35,10 @@ private:
   // Publishers
   ros::Publisher pub_1;		     // beta
   ros::Publisher pub_2;		     // stairParam
-  ros::Publisher pub_velocity;
+  // ros::Publisher pub_velocity;
+  ros::Publisher pub_s_velocity;
+
+
 
   // Tf
   tf::TransformBroadcaster br;
