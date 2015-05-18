@@ -6,7 +6,6 @@ TODO
 ------------------
 
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
-*-----------------
 * create launch-file to start the full package node
 * test multiple fmincon algorithms on theire performance and accuracy
 * test multiple FoV configs on theire performance and accuracy
