@@ -2,7 +2,7 @@
 <launch>
 
   <node pkg="scalaser" type="StairModel" name="stair_model" output="screen" /> 
-  <node pkg="scalaser" type="ChairModel" name="chair_model" output="screen" /> 
+  <!-- <node pkg="scalaser" type="ChairModel" name="chair_model" output="screen" />  -->
   <!-- <node pkg="scalaser" type="Laser2Stair" name="laser2stair" output="screen" />  -->
 
 

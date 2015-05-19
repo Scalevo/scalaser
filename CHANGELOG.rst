@@ -6,16 +6,38 @@ TODO
 ------------------
 
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
-* create launch-file to start the full package node
-* test multiple fmincon algorithms on theire performance and accuracy
-* test multiple FoV configs on theire performance and accuracy
+* use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
 
 NICE TO HAVE
 ------------------
+* add timestamp to published messages
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
-* make fov_s & fov_d editable during runtime
+* make stair growth dependant of fov_s
+* define beta threshold in launch file
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
+
+TESTS
+------------------
+* test controler on stairs
+  - has only been tested static without driving on stairs due to safety measurs
+  - Kp = 0.05 align the chair to -3° to 0° within 10 s.
+  - more testing still needed
+  - ...
+* test multiple fmincon algorithms on their performance and accuracy
+  - sqp is the fastest with enough accuracy
+* test multiple FoV configs on their performance and accuracy
+  - 150 seems to be the sweetspot
+  - more testing still needed
+  - ...
+* variable track model works
+* variable stair model works
+
+0.0.9 (2015-5-19)
+-----------------
+* created launch-file to start the wheelchair alignment for testing
+* updated README
+* added tests section to changelog
 
 0.0.8 (2015-5-18)
 -----------------
@@ -23,6 +45,7 @@ NICE TO HAVE
 * dzi, phi0 are now computed out of the lambda positions received from the MyRIO -> this might only be needed during initialization to save computation time.
 * a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server
 * if beta values are unusual for a number of computations, matching gets reinitialized
+* fov_s & fov_d are editable before restart of the service
 
 0.0.7 (2015-5-15)
 -----------------
@@ -61,13 +84,10 @@ NICE TO HAVE
 
   As it turned out was the modulo constraint of beta the source of the randomly occuring phase offset at around 40 seconds in the bag file "up_turn_down_pointcloud.bag". It happend always when one dx was close to the modulo threshold while the other was bigger than the threshold. This lead to a big difference between dx_1 and dx_2 which led to a unexpected big beta.
 
-
-
 0.0.4 (2015-5-11)
 ------------------
 * computes the angle only if pointclouds are published
 * implemented service which starts the wheelchair alignment
-
 
 0.0.3 (2015-05-10)
 ------------------
