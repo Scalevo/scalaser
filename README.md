@@ -12,7 +12,7 @@ The source code is released under a [BSD 3-Clause license](ros_package_template/
 Contact: Miro Voellmy, mvoellmy@ethz.ch  
 Affiliation: Autonomous Systems Lab, ETH Zurich**
 
-![Example image](doc/tracks_on_stairs.jpg)
+![Example image](doc/scalebot_on_stairs.jpg)
 
 
 ### Publications
