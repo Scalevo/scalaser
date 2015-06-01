@@ -110,6 +110,7 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     computeVelocity();
     setPosition();
     ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
+    
     count++;
   }
 }
@@ -117,6 +118,7 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
 void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) {
   phi0 = -joint_state->position[0];
   dzi = r_h + s*sin(-phi0 + phi_f);
+
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
   cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
   cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
@@ -125,7 +127,7 @@ void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) 
 
 void Angle::initializeMatching() {
 
-  setParameters();
+  // setParameters(); Strangely this parameter update messes the publishing of the stair_middle tf massively up
 
   beta_new = 0;
   beta_old = 0;
@@ -174,7 +176,7 @@ void Angle::computeAngle() {
 void Angle::computeStair() {
   v_s = (cloud_1.getV_r()+cloud_2.getV_r())/2*cos(beta.data*PI/180);
   stair_param.data.clear();
-  for (int i=0;i<5;i++)  stair_param.data.push_back(v_s(i));
+  for (int i=0; i < 5; i++)  stair_param.data.push_back(v_s(i));
   pub_2.publish(stair_param);
 }
 
@@ -204,8 +206,8 @@ void Angle::setPosition() {
   double h = v_s(0);
   double t = v_s(1);
   double dx = -v_s(2);
-  double dz = dzi+v_s(3);
-  double phi = -phi0-v_s(4);
+  double dz = dzi + v_s(3);
+  double phi = -phi0 - v_s(4);
 
   transform.setOrigin( tf::Vector3(-(cos(phi)*dx + sin(phi)*dz),0,-(-sin(phi)*dx + cos(phi)*dz)) );
   tf::Quaternion q;
@@ -222,6 +224,8 @@ void Angle::setParameters() {
   n.param("/scalaser/phi",phi0,-43*PI/180);
   n.param("/scalaser/kp",kp,0.05);
   n.param("/scalaser/threshold",threshold,0.08);
+
+  // ROS_INFO("FoV_S: %d FoV_D: %d dzi: %f phi0: %f", fov_s, fov_d, dzi, phi0);
 }
 
 void Angle::plot_data() {

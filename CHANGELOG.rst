@@ -5,11 +5,17 @@ Changelog for package scalaser
 TODO
 ------------------
 
+* develope algorithm to compute curved stairs
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
 * use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
+* if the sensors are used outside, it can occur that the pointcloud size gets reduced which leads to a shift of FoV of each sensor -> phase offset
+* !!! a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server !!! This is bugged. Fixme plz.
+* Why does a reinitialization of the parameters cause such a huge mess
+
 
 NICE TO HAVE
 ------------------
+* add initialization for start and end of stairs to determine when to stop the stair model
 * add timestamp to published messages
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
 * make stair growth dependant of fov_s
@@ -33,6 +39,11 @@ TESTS
 * variable track model works
 * variable stair model works
 
+0.0.10 (2015-6-2)
+-----------------
+* fixed a bug, which caused the stair tf to get all messed up
+* realized, that the pointcloud vector isn't always of size 811 and thus the method of reduzing its fov doesn't work that robust
+
 0.0.9 (2015-5-19)
 -----------------
 * created launch-file to start the wheelchair alignment for testing
@@ -43,7 +54,6 @@ TESTS
 -----------------
 * robot model of the wheelchair has been created in the package SCALEBOT 
 * dzi, phi0 are now computed out of the lambda positions received from the MyRIO -> this might only be needed during initialization to save computation time.
-* a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server
 * if beta values are unusual for a number of computations, matching gets reinitialized
 * fov_s & fov_d are editable before restart of the service
 

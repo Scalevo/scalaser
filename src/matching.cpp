@@ -28,6 +28,9 @@ void matching::matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg) {
 
 void matching::transformMsg(const sensor_msgs::PointCloud::ConstPtr& msg) {
   // Initialize Vector transformed around initial guess
+  int size = msg -> points.size();
+  ROS_INFO("Pointcloud Size of Cloud %d: %d", h, size);
+
   for (int i=0; i < fov_d; i++) {
     double a = msg->points[i+fov_s].x;
     double b = msg->points[i+fov_s].y;
