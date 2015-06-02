@@ -6,12 +6,14 @@ TODO
 ------------------
 
 * develope algorithm to compute curved stairs
-* Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
 * use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
-* if the sensors are used outside, it can occur that the pointcloud size gets reduced which leads to a shift of FoV of each sensor -> phase offset
-* !!! a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server !!! This is bugged. Fixme plz.
-* Why does a reinitialization of the parameters cause such a huge mess
 
+KNOWN BUGS
+------------------
+* Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
+* if the sensors dont get values for all 811 scan points, the pointcloud gets reduced to the size of useable values which leads to a shift of FoV of each sensor -> phase offset
+* "a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server" This is bugged. Fixme plz.
+* Why does a reinitialization of the parameters cause such a huge mess
 
 NICE TO HAVE
 ------------------
@@ -20,6 +22,7 @@ NICE TO HAVE
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
 * make stair growth dependant of fov_s
 * define beta threshold in launch file
+* make the velocity_forward sent to the MyRio adjustable dynamic reconfigure
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
@@ -38,6 +41,11 @@ TESTS
   - ...
 * variable track model works
 * variable stair model works
+
+0.0.11 (2015-6-3)
+-----------------
+* added parameter vel_fwd which is published to set_vel as a way to give the motors speed while testing
+* changed the beta filter to reinitialize matching if beta is bigger than +-10°
 
 0.0.10 (2015-6-2)
 -----------------

@@ -80,8 +80,6 @@ private:
   std::vector<double> beta_vector;
   std::vector<double> time_vector;
 
-
-
   // Messages
   std_msgs::Float64MultiArray stair_param;
   std_msgs::Float64 beta;
@@ -93,6 +91,7 @@ private:
 
   // Parameters for motor controler
   double kp;
+  double vel_fwd;
   double threshold;
 
   // counter

@@ -19,7 +19,6 @@ The distance traveled (dx) can be used to determin the desired angle if alpha is
 
 The angle we want to minimize is computed out of the step parameters which are scaled depending on the angle of the wheelchair on the curved stairs.
 
-
-   //   |
-  //	|
- //		|
+  /    |    \
+ /     |     \
+/      |      \

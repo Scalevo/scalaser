@@ -2,7 +2,8 @@
 
 Angle::Angle(ros::NodeHandle n_):
 n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0), wrong_beta_count(0),
-r_h(.1016), s(.653837), phi_f(.193897)
+r_h(.1016), s(.653837), phi_f(.193897),
+kp(0), vel_fwd(0)
 {
   setParameters();
   v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
@@ -154,7 +155,7 @@ void Angle::initializeMatching() {
 void Angle::computeAngle() {
   beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
 
-  if (fabs(beta_old - beta_new) < 15) {
+  if (fabs(beta_old - beta_new) < 8 && fabs(beta_old) < 10) {
     beta.data = beta_new;
     pub_1.publish(beta);
 
@@ -168,7 +169,7 @@ void Angle::computeAngle() {
     ROS_WARN("No beta published since unreasonable values occured.");
     ROS_WARN("Refused beta: %f",beta_new);
     wrong_beta_count++;
-    if (wrong_beta_count > 3) {initializeMatching();}
+    if (wrong_beta_count > 3) initializeMatching();
   }
   beta_old = beta.data;
 }
@@ -182,6 +183,7 @@ void Angle::computeStair() {
 
 void Angle::computeVelocity() {
   n.param("/scalaser/kp",kp,0.05);
+  n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   // velocity.data.clear();
   // velocity.data.push_back(0);
   // if(cloud_1.getSe_r()<threshold && cloud_2.getSe_r()<threshold)
@@ -191,12 +193,17 @@ void Angle::computeVelocity() {
   //   ROS_WARN("No velocity published since matching didn't work properly.");
   // }
 
+  // Fill velo message
   std_msgs::String velo;
-  velo.data = "set_vel,0,"; 
 
-  std::ostringstream buff;
-  buff<<beta.data*kp;
-  velo.data += buff.str();
+  velo.data = "set_vel,"; 
+  std::ostringstream buff_1;
+  buff_1 << vel_fwd;
+  velo.data += buff_1.str();
+  velo.data += ","; 
+  std::ostringstream buff_2;
+  buff_2 << beta.data * kp;
+  velo.data += buff_2.str();
 
   pub_s_velocity.publish(velo);
 }
@@ -223,6 +230,7 @@ void Angle::setParameters() {
   n.param("/scalaser/dzi",dzi,.65);
   n.param("/scalaser/phi",phi0,-43*PI/180);
   n.param("/scalaser/kp",kp,0.05);
+  n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   n.param("/scalaser/threshold",threshold,0.08);
 
   // ROS_INFO("FoV_S: %d FoV_D: %d dzi: %f phi0: %f", fov_s, fov_d, dzi, phi0);
@@ -230,7 +238,7 @@ void Angle::setParameters() {
 
 void Angle::plot_data() {
   // plot_engine.initialize();
-  if (plot_engine.initialize() && plot_engine.good()) {ROS_INFO("Plot engine succesfully initialized.");}
+  if (plot_engine.initialize() && plot_engine.good()) ROS_INFO("Plot engine succesfully initialized.");
 
   Eigen::VectorXd beta_vectorXd(beta_vector.size());
   Eigen::VectorXd time_vectorXd(time_vector.size());
@@ -240,7 +248,9 @@ void Angle::plot_data() {
 
   plot_engine.put("beta_vector",beta_vectorXd);
   plot_engine.put("time_vector",time_vectorXd);
-  plot_engine.executeCommand("clf('reset');");
+  // plot_engine.executeCommand("clf('reset');");
+  plot_engine.executeCommand("close(h);");
+
   plot_engine.executeCommand("h=figure;");
   plot_engine.executeCommand("plot(time_vector,beta_vector);");
   plot_engine.executeCommand("saveas(h,beta_plot,'fig')");
