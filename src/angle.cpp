@@ -202,10 +202,17 @@ void Angle::computeVelocity() {
   velo.data += buff_1.str();
   velo.data += ","; 
   std::ostringstream buff_2;
-  buff_2 << beta.data * kp;
-  velo.data += buff_2.str();
 
-  pub_s_velocity.publish(velo);
+  if(cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
+    buff_2 << beta.data * kp;
+    velo.data += buff_2.str();
+    pub_s_velocity.publish(velo);
+  }
+  else {
+    buff_2 << 0;
+    velo.data += buff_2.str();
+    ROS_WARN("No velocity published since matching didn't work properly.")
+  }
 }
 
 void Angle::setPosition() {
