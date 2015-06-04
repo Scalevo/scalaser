@@ -11,10 +11,8 @@ TODO
 KNOWN BUGS
 ------------------
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
-* if the sensors dont get values for all 811 scan points, the pointcloud gets reduced to the size of useable values which leads to a shift of FoV of each sensor -> phase offset
 * "a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server" This is bugged. Fixme plz.
 * Why does a reinitialization of the parameters cause such a huge mess
-* Beta filtering needs some work. Really unreliable on stairs
 
 
 NICE TO HAVE
@@ -24,9 +22,15 @@ NICE TO HAVE
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
 * make stair growth dependant of fov_s
 * define beta threshold in launch file
-* make the velocity_forward sent to the MyRio adjustable dynamic reconfigure
+* make the velocity_forward sent to the MyRio adjustable with dynamic reconfigure
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
+
+0.0.12 (2015-6-4)
+-----------------
+* changed FoV reduction to be computed out of the pointcloud points.
+* beta filter has been changed to only publish a beta if it is between +-10°
+* 
 
 0.0.11 (2015-6-3)
 -----------------
