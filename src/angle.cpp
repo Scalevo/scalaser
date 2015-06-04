@@ -155,7 +155,7 @@ void Angle::initializeMatching() {
 void Angle::computeAngle() {
   beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
 
-  if (fabs(beta_old - beta_new) < 8 && fabs(beta_old) < 10) {
+  if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
     beta.data = beta_new;
     pub_1.publish(beta);
 
@@ -166,9 +166,9 @@ void Angle::computeAngle() {
     wrong_beta_count = 0;
   }
   else {
-    ROS_WARN("No beta published since unreasonable values occured.");
-    ROS_WARN("Refused beta: %f",beta_new);
     wrong_beta_count++;
+    ROS_WARN("No beta published since unreasonable values occured. ⁻ %d",wrong_beta_count);
+    ROS_WARN("Refused beta: %f",beta_new);
     if (wrong_beta_count > 3) initializeMatching();
   }
   beta_old = beta.data;
@@ -182,8 +182,11 @@ void Angle::computeStair() {
 }
 
 void Angle::computeVelocity() {
+
+  // Read Velocity Parameters from Server
   n.param("/scalaser/kp",kp,0.05);
   n.param("/scalaser/vel_fwd",vel_fwd,0.0);
+
   // velocity.data.clear();
   // velocity.data.push_back(0);
   // if(cloud_1.getSe_r()<threshold && cloud_2.getSe_r()<threshold)
@@ -211,7 +214,7 @@ void Angle::computeVelocity() {
   else {
     buff_2 << 0;
     velo.data += buff_2.str();
-    ROS_WARN("No velocity published since matching didn't work properly.")
+    ROS_WARN("No velocity published since matching didn't work properly.");
   }
 }
 

@@ -114,6 +114,10 @@ void matching::fillMatfile() {
   file.get("xf", xf);
   file.get("zf", zf);
 
+  ROS_INFO("First Point within FoV in x: %f",xf(0));
+  ROS_INFO("Last Point within FoV in x: %f",xf(xf.size()-1e));
+
+
   assert(file.close());
 
   // ROS_INFO("RESULT VECTOR AFTER FMINSERACH() OF CLOUD_%d",h);

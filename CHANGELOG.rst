@@ -14,6 +14,8 @@ KNOWN BUGS
 * if the sensors dont get values for all 811 scan points, the pointcloud gets reduced to the size of useable values which leads to a shift of FoV of each sensor -> phase offset
 * "a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server" This is bugged. Fixme plz.
 * Why does a reinitialization of the parameters cause such a huge mess
+* Beta filtering needs some work. Really unreliable on stairs
+
 
 NICE TO HAVE
 ------------------
@@ -26,26 +28,11 @@ NICE TO HAVE
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
-TESTS
-------------------
-* test controler on stairs
-  - has only been tested static without driving on stairs due to safety measurs
-  - Kp = 0.05 align the chair to -3° to 0° within 10 s.
-  - more testing still needed
-  - ...
-* test multiple fmincon algorithms on their performance and accuracy
-  - sqp is the fastest with enough accuracy
-* test multiple FoV configs on their performance and accuracy
-  - 150 seems to be the sweetspot
-  - more testing still needed
-  - ...
-* variable track model works
-* variable stair model works
-
 0.0.11 (2015-6-3)
 -----------------
 * added parameter vel_fwd which is published to set_vel as a way to give the motors speed while testing
 * changed the beta filter to reinitialize matching if beta is bigger than +-10°
+* readded the if-condition again to check if the rotation velocity can be published.
 
 0.0.10 (2015-6-2)
 -----------------
