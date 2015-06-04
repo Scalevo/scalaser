@@ -137,8 +137,8 @@ void Angle::initializeMatching() {
   time_vector.clear();
   count = 0;
 
-  cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
-  cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
+  // cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
+  // cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
 
   ROS_INFO("Start time: %f",time_start);
 
@@ -245,8 +245,6 @@ void Angle::setParameters() {
   n.param("/scalaser/kp",kp,0.05);
   n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   n.param("/scalaser/threshold",threshold,0.08);
-
-  // ROS_INFO("FoV_S: %d FoV_D: %d dzi: %f phi0: %f", fov_s, fov_d, dzi, phi0);
 }
 
 void Angle::plot_data() {

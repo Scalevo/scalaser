@@ -10,6 +10,7 @@ TODO
 
 KNOWN BUGS
 ------------------
+* FoV method introduced quite the performance loss.
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
 * "a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server" This is bugged. Fixme plz.
 * Why does a reinitialization of the parameters cause such a huge mess
@@ -30,7 +31,6 @@ NICE TO HAVE
 -----------------
 * changed FoV reduction to be computed out of the pointcloud points.
 * beta filter has been changed to only publish a beta if it is between +-10°
-* 
 
 0.0.11 (2015-6-3)
 -----------------

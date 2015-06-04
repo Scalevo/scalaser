@@ -37,13 +37,20 @@ void matching::transformMsg() {
   // Initialize Vector transformed around initial guess
   int size = xi_match.size();
   // ROS_INFO("Pointcloud Size of Cloud %d: %d", h, size);
-
+  xi.resize(0);
+  zi.resize(0);
+  xi.resize(fov_d+1);
+  zi.resize(fov_d+1);
+  
 int counter = 0;
   for (int i=0; i < size; i++) {
     double a = xi_match[i];
     double b = zi_match[i];
 
-    if(atan2(b,a) > fov_s*ang_inc + min_ang && atan2(b,a) < (fov_s + fov_d)*ang_inc + min_ang) {
+    if (counter > fov_d) {
+
+    }
+    else if(atan2(b,a) > fov_s*ang_inc + min_ang && atan2(b,a) < (fov_s + fov_d)*ang_inc + min_ang) {
       xi(counter) = (- b*cos(phi0)*pow((-1), (h-1)) + a*sin(phi0));
       zi(counter) = (- a*cos(phi0) - b*sin(phi0)*pow((-1), (h-1)) + dzi);
       counter++;
@@ -81,9 +88,11 @@ void matching::setParameters(double phi0_,double dzi_,int fov_s_,int fov_d_) {
   dzi = dzi_;
   fov_s = fov_s_;
   fov_d = fov_d_;
-  // xi.resize(fov_d);
-  // zi.resize(fov_d);
-  
+  xi.resize(fov_d+1);
+  zi.resize(fov_d+1);
+  xf.resize(fov_d+1);
+  zf.resize(fov_d+1);
+  z_r.resize(fov_d+1);
 }
 
 void matching::fillMatfile() {
