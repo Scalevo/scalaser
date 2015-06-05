@@ -32,19 +32,10 @@ void matching::matchCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
 
 void matching::transformMsg() {
 
-  // Initialize Vector transformed around initial guess
-  int size = xi_temp.size();
-  // ROS_INFO("Pointcloud Size of Cloud %d: %d", h, size);
-
-  // ROS_INFO("xi_temp size vs fov_d size");
-  // ROS_INFO("%d............%d",size,fov_d);
-
+  // Transform Vector around initial guess
   for (int i=0; i < fov_d; i++) {
-    double a = xi_temp[i];
-    double b = zi_temp[i];
-
-    xi(i) = (- b*cos(phi0)*pow((-1), (h-1)) + a*sin(phi0));
-    zi(i) = (- a*cos(phi0) - b*sin(phi0)*pow((-1), (h-1)) + dzi);
+    xi(i) = (- zi_temp[i]*cos(phi0)*pow((-1), (h-1)) + xi_temp[i]*sin(phi0));
+    zi(i) = (- xi_temp[i]*cos(phi0) - zi_temp[i]*sin(phi0)*pow((-1), (h-1)) + dzi);
   }
 }
 
