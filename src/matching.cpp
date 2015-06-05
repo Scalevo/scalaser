@@ -5,10 +5,11 @@ matlab::Engine matching::engine(true);  // Initialize static matlab engine
 matching::matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, Eigen::VectorXd v0_, int h_):
 n(n_),
 phi0(phi0_), dzi(dzi_), fov_s(fov_s_), fov_d(fov_d_), h(h_),
-xi(fov_d_), zi(fov_d_), xi_temp(fov_d_), zi_temp(fov_d_), xf(fov_d_), zf(fov_d_), z_r(fov_d_),
+xi(fov_d_), zi(fov_d_), xf(fov_d_), zf(fov_d), z_r(fov_d_),
 v0(v0_),
 v_r(v0_.size()), lb(v0_.size()), ub(v0_.size()),
-se_r(0)
+se_r(0),
+ang_inc(0.00581718236208), min_ang(-2.35619449019), max_ang(2.35619449019)
 {
   // engine.showWorkspace();
   n.param("/scalaser/threshold", threshold, 0.08);
@@ -22,25 +23,42 @@ se_r(0)
 }
 
 
-void matching::matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg) {
-  transformMsg(msg);
+void matching::matchCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
+  r_temp.clear();
+  for (int i = 0; i < 811; i++) {
+    r_temp.push_back(msg->ranges[i]);
+  }
 }
 
-void matching::transformMsg(const sensor_msgs::PointCloud::ConstPtr& msg) {
-  // Initialize Vector transformed around initial guess
-  int size = msg -> points.size();
-  ROS_INFO("Pointcloud Size of Cloud %d: %d", h, size);
+void matching::setData() {
+  int rs_it = 0;  // Resize Itterator
 
+  xi_temp.clear();
+  zi_temp.clear();
+  
+  for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
+    if (r_temp[i] == 0) {
+      rs_it++;
+    }
+    else {
+    xi_temp.push_back(cos(i*ang_inc + min_ang)*r_temp[i]);
+    zi_temp.push_back(sin(i*ang_inc + min_ang)*r_temp[i]);
+    }
+  }
+  if(rs_it > 0) {ROS_INFO("%d NULL values within FoV.",rs_it);}
+}
+
+void matching::transformMsg() {
+
+  // Transform Vector around initial guess
   for (int i=0; i < fov_d; i++) {
-    double a = msg->points[i+fov_s].x;
-    double b = msg->points[i+fov_s].y;
-
-    xi_temp(i) = (- b*cos(phi0)*pow((-1), (h-1)) + a*sin(phi0));
-    zi_temp(i) = (- a*cos(phi0) - b*sin(phi0)*pow((-1), (h-1)) + dzi);
+    xi(i) = (- zi_temp[i]*cos(phi0)*pow((-1), (h-1)) + xi_temp[i]*sin(phi0));
+    zi(i) = (- xi_temp[i]*cos(phi0) - zi_temp[i]*sin(phi0)*pow((-1), (h-1)) + dzi);
   }
 }
 
 void matching::matchTemplate() {
+  transformMsg();
   fillMatfile();
   // fillEngine();
   publishSe_r();
@@ -68,6 +86,12 @@ void matching::setParameters(double phi0_,double dzi_,int fov_s_,int fov_d_) {
   dzi = dzi_;
   fov_s = fov_s_;
   fov_d = fov_d_;
+
+  xi.resize(fov_d);
+  zi.resize(fov_d);
+  xf.resize(fov_d);
+  zf.resize(fov_d);
+  z_r.resize(fov_d);
 }
 
 void matching::fillMatfile() {
@@ -113,10 +137,6 @@ void matching::fillMatfile() {
   file.get("z_r", z_r);
   file.get("xf", xf);
   file.get("zf", zf);
-
-  ROS_INFO("First Point within FoV in x: %f",xf(0));
-  ROS_INFO("Last Point within FoV in x: %f",xf(xf.size()-1e));
-
 
   assert(file.close());
 

@@ -6,13 +6,9 @@ r_h(.1016), s(.653837), phi_f(.193897),
 kp(0), vel_fwd(0)
 {
   setParameters();
-  v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
-  phi0 = phi0*PI/180;
 
-  ROS_INFO("Phi0: %f",phi0);
-  ROS_INFO("Field of View Start: %d",fov_s);
-  ROS_INFO("Field of View Window: %d",fov_d);
-  ROS_INFO("Dz Initial: %f",dzi);
+
+  v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
 
   // ROS_INFO("Start Values for fminsearch:");
   // ROS_INFO("stair heigth________h0 = %f",v0(0); 
@@ -33,7 +29,7 @@ kp(0), vel_fwd(0)
   // initialize service
   service = n.advertiseService("align_wheelchair",&Angle::alignWheelchair,this);
 
-  ROS_INFO("Service started. Waiting for input.");
+  ROS_INFO("Node started. Waiting for input.");
 
   ros::spin();
 }
@@ -42,26 +38,26 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
   if (request.on) {
 
     // create subscriber
-    sub_1 = n.subscribe("cloud_1", 1, &matching::matchCallback, &cloud_1);
-    sub_2 = n.subscribe("cloud_2", 1, &matching::matchCallback, &cloud_2);
+    sub_1 = n.subscribe("scan_1", 1, &matching::matchCallback, &cloud_1);
+    sub_2 = n.subscribe("scan_2", 1, &matching::matchCallback, &cloud_2);
 
     sub_joint = n.subscribe("/joint_states", 1, &Angle::jointCallback, this);
+
 
     // advertise topics
     pub_1 = n.advertise<std_msgs::Float64>("/beta",100);
     pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",100);
     // pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/set_vel",100);
-
     pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",100);
 
 
     while (sub_1.getNumPublishers() == 0 || sub_2.getNumPublishers() == 0) {
       sleep(1);
     }    
-
-    // initialize matching
+    ros::spinOnce();
+    
     initializeMatching();
-
+    
     // start main loop timer
     main_timer.start();
 
@@ -110,25 +106,29 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     computeStair();
     computeVelocity();
     setPosition();
-    ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     
+    ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     count++;
   }
 }
 
 void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) {
-  phi0 = -joint_state->position[0];
+  phi0 = -joint_state -> position[0];
   dzi = r_h + s*sin(-phi0 + phi_f);
 
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
-  cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
-  cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
+  // cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
+  // cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
+  ros::param::set("/scalaser/phi", phi0);
+  ros::param::set("/scalaser/phi", dzi);
+
   ROS_INFO("Matching Parameters have been updated.");
 }
 
 void Angle::initializeMatching() {
 
-  // setParameters(); Strangely this parameter update messes the publishing of the stair_middle tf massively up
+  // Strangely this parameter update messes the publishing of the stair_middle tf massively up
+  setParameters();
 
   beta_new = 0;
   beta_old = 0;
@@ -155,7 +155,9 @@ void Angle::initializeMatching() {
 void Angle::computeAngle() {
   beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
 
-  if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
+  // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
+  if (fabs(beta_new) < 10) {
+
     beta.data = beta_new;
     pub_1.publish(beta);
 
@@ -209,13 +211,13 @@ void Angle::computeVelocity() {
   if(cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
     buff_2 << beta.data * kp;
     velo.data += buff_2.str();
-    pub_s_velocity.publish(velo);
   }
   else {
     buff_2 << 0;
     velo.data += buff_2.str();
     ROS_WARN("No velocity published since matching didn't work properly.");
   }
+  pub_s_velocity.publish(velo);
 }
 
 void Angle::setPosition() {
@@ -243,7 +245,12 @@ void Angle::setParameters() {
   n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   n.param("/scalaser/threshold",threshold,0.08);
 
-  // ROS_INFO("FoV_S: %d FoV_D: %d dzi: %f phi0: %f", fov_s, fov_d, dzi, phi0);
+  phi0 = phi0*PI/180;
+
+  ROS_INFO("Phi0: %f",phi0);
+  ROS_INFO("Field of View Start: %d",fov_s);
+  ROS_INFO("Field of View Window: %d",fov_d);
+  ROS_INFO("Dz Initial: %f",dzi);
 }
 
 void Angle::plot_data() {

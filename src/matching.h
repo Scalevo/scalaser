@@ -8,6 +8,7 @@
 
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud.h"
+#include "sensor_msgs/LaserScan.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "matlabCppInterface/Engine.hpp"
@@ -19,29 +20,27 @@
 class matching{
   ros::NodeHandle n;
 
-  // Cpp to MATLAB stuff
+  // Cpp to MATLAB
   static matlab::Engine engine;
   matlab::MatFile file;
-
-  // Message Subscriber
 
   // Publishers
   ros::Publisher se_r_pub;
 
-  // Messages
-  sensor_msgs::PointCloud::ConstPtr temporary_msg;
-
   // Pointcloud Vector
   Eigen::VectorXd xi;        // X-Vector of pointcloud transformed around inital values
   Eigen::VectorXd zi;        // Z-Vector of pointcloud transformed around inital values
-  Eigen::VectorXd xi_temp;   // X-Vector of pointcloud transformed around inital values
-  Eigen::VectorXd zi_temp;   // Z-Vector of pointcloud transformed around inital values
   Eigen::VectorXd xf;        // Common X-Vector of transformed pointcloud and optimized template
   Eigen::VectorXd zf;        // Z-Vector of transformed
   Eigen::VectorXd z_r;       // Z-Vector of optimized template
 
-  // Upper and lower Bounds of fmincon optimization
+  std::vector<double> xi_temp;
+  std::vector<double> zi_temp;
+  std::vector<double> r_temp;
+  std::vector<double> xi_match;
+  std::vector<double> zi_match;
 
+  // Upper and lower Bounds of fmincon optimization
   Eigen::VectorXd lb;
   Eigen::VectorXd ub;
 
@@ -54,6 +53,9 @@ class matching{
   double dzi;
   int fov_s;
   int fov_d;
+  double ang_inc;
+  double min_ang;
+  double max_ang;
 
   // Error of fminsearch()
   double se_r;
@@ -62,14 +64,15 @@ class matching{
   int h;
   double threshold;
 
+
  public:
   // Constructors
   matching() {}
   matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, Eigen::VectorXd v0_, int h_);
 
   // main functions
-  void matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg);
-  void transformMsg(const sensor_msgs::PointCloud::ConstPtr& msg);
+  void matchCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
+  void transformMsg();
   void matchTemplate();
 
   // cpp to matlab connection functions
@@ -78,12 +81,11 @@ class matching{
 
   // Parameter update functions
   void setParameters(double phi0_, double dzi_, int fov_s_, int fov_d_);
-  void setData() {xi = xi_temp; zi = zi_temp;}
+  void setData();
   void setFminArgs(Eigen::VectorXd v_r_); 
 
   // Return functions
   Eigen::VectorXd getV_r() {return v_r;}
-  // double getDx() {return fmod(v_r(2), sqrt(v_r(0)*v_r(0)+v_r(1)*v_r(1)));}
   double getDx() {return v_r(2);}
   double getSe_r() {return se_r;}
   double getDiag() {return sqrt(v_r(1)*v_r(1) + v_r(2)*v_r(2));}

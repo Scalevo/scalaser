@@ -2,7 +2,7 @@
 <launch>
 
   <param name="/scalaser/fov_s" type="int" value="200" />
-  <param name="/scalaser/fov_d" type="int" value="250" />
+  <param name="/scalaser/fov_d" type="int" value="150" />
   <param name="/scalaser/dzi" type="double" value=".62" />
   <param name="/scalaser/phi" type="double" value="-35" />
   <param name="/scalaser/kp" type="double" value="0.1" />
