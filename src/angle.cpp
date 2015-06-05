@@ -119,7 +119,7 @@ void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) 
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
   // cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
   // cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
-  ros::param::set("/scalaser/phi", phi0);
+  ros::param::set("/scalaser/phi", PI/180*phi0);
   ros::param::set("/scalaser/phi", dzi);
 
   ROS_INFO("Matching Parameters have been updated.");
@@ -139,21 +139,69 @@ void Angle::initializeMatching() {
   cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
   cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
 
-  ROS_INFO("Start time: %f",time_start);
 
+  ROS_INFO("Start time: %f",time_start);
+  
+  setBoundaries();
+
+  time_start = ros::Time::now().toSec();
+  count++;
+}
+
+void Angle::setBoundaries() {
   cloud_1.setData();
   cloud_2.setData();
   cloud_1.setFminArgs(v0);
   cloud_1.matchTemplate();
   cloud_2.setFminArgs(cloud_1.getV_r());
   cloud_2.matchTemplate();
-
-  time_start = ros::Time::now().toSec();
-  count++;
 }
 
 void Angle::computeAngle() {
-  beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
+
+  dx_1 = cloud_1.getDx();
+  dx_2 = cloud_2.getDx();
+  diag_1 = cloud_1.getDiag();
+  diag_2 = cloud_2.getDiag();
+
+// Experimental for Curved
+
+  
+  if (dx_1 > 0.8*diag_1 || dx_2 > 0.8*diag_2) {
+    v0 = cloud_1.getV_r();
+    v0(2) = 0;
+    setBoundaries();
+    dx_1 = cloud_1.getDx();
+    dx_2 = cloud_2.getDx();
+    diag_1 = cloud_1.getDiag();
+    diag_2 = cloud_2.getDiag();
+  }
+
+  computeAlpha();
+  // updateFoV();
+  // setFoV();
+  // setDx();
+// Endperimental
+
+  computeBeta();
+}
+
+void Angle::computeAlpha() {
+  // Get Parameters from matching objects
+  alpha_1 = atan((dx_2 - dx_1) / a);
+  alpha_2 = atan(((diag_2 - dx_2) - (diag_1 - dx_1)) / a);
+  alpha = 180/PI*(alpha_1 + alpha_2);
+  beta_new = 180/PI*(alpha_1 - alpha_2)/2;
+  ROS_INFO("ALPHA_1: %f°", 180/PI*(alpha_1));
+  ROS_INFO("ALPHA_2: %f°", 180/PI*(alpha_2));
+  ROS_INFO("ALPHA: %f°", alpha);
+  ROS_INFO("BETAA: %f°", beta_new);
+}
+
+void Angle::computeBeta() {
+
+  // beta_new = 180/PI*(alpha_1 - alpha_2)/2;
+  // beta_new = 180/PI*atan((dx_2-dx_1)/a);
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
   if (fabs(beta_new) < 10) {
@@ -163,7 +211,23 @@ void Angle::computeAngle() {
 
     ROS_INFO("Time: %f",ros::Time::now().toSec()-time_start);
     time_vector.push_back(ros::Time::now().toSec()-time_start);
+    alpha_vector.push_back(180/PI*(alpha_1 + alpha_2));
     beta_vector.push_back(beta_new);
+
+    v0 = cloud_1.getV_r();
+    ROS_INFO("Values for Cloud_1:");
+    ROS_INFO("stair heigth________h = %f",v0(0)); 
+    ROS_INFO("stair depth_________t = %f",v0(1));
+    ROS_INFO("phase offset_______dx = %f",v0(2));
+    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+    dx_1_vector.push_back(v0(2));
+    v0 = cloud_2.getV_r();
+    ROS_INFO("Values for Cloud_2:");
+    ROS_INFO("stair heigth________h = %f",v0(0)); 
+    ROS_INFO("stair depth_________t = %f",v0(1));
+    ROS_INFO("phase offset_______dx = %f",v0(2));
+    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+    dx_2_vector.push_back(v0(2));
 
     wrong_beta_count = 0;
   }
@@ -174,7 +238,9 @@ void Angle::computeAngle() {
     if (wrong_beta_count > 3) initializeMatching();
   }
   beta_old = beta.data;
+  ROS_INFO("BETAB: %f°", beta_old);
 }
+
 
 void Angle::computeStair() {
   v_s = (cloud_1.getV_r()+cloud_2.getV_r())/2*cos(beta.data*PI/180);
@@ -240,7 +306,7 @@ void Angle::setParameters() {
   n.param("/scalaser/fov_s",fov_s,200);
   n.param("/scalaser/fov_d",fov_d,150);
   n.param("/scalaser/dzi",dzi,.65);
-  n.param("/scalaser/phi",phi0,-43*PI/180);
+  n.param("/scalaser/phi",phi0,-43.0);
   n.param("/scalaser/kp",kp,0.05);
   n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   n.param("/scalaser/threshold",threshold,0.08);
@@ -251,6 +317,8 @@ void Angle::setParameters() {
   ROS_INFO("Field of View Start: %d",fov_s);
   ROS_INFO("Field of View Window: %d",fov_d);
   ROS_INFO("Dz Initial: %f",dzi);
+
+  ROS_INFO("Parameters from Server have been updated.");
 }
 
 void Angle::plot_data() {
@@ -258,18 +326,27 @@ void Angle::plot_data() {
   if (plot_engine.initialize() && plot_engine.good()) ROS_INFO("Plot engine succesfully initialized.");
 
   Eigen::VectorXd beta_vectorXd(beta_vector.size());
+  Eigen::VectorXd alpha_vectorXd(alpha_vector.size());
   Eigen::VectorXd time_vectorXd(time_vector.size());
+  Eigen::VectorXd dx_1_vectorXd(time_vector.size());
   for (int i=0; i < beta_vector.size(); ++i) beta_vectorXd[i] = beta_vector[i];
+  for (int i=0; i < alpha_vector.size(); ++i) alpha_vectorXd[i] = alpha_vector[i];
   for (int i=0; i < time_vector.size(); ++i) time_vectorXd[i] = time_vector[i];
-
+  for (int i=0; i < dx_1_vector.size(); ++i) dx_1_vectorXd[i] = dx_1_vector[i];
 
   plot_engine.put("beta_vector",beta_vectorXd);
+  plot_engine.put("alpha_vector",alpha_vectorXd);
   plot_engine.put("time_vector",time_vectorXd);
+  plot_engine.put("dx_1_vector",dx_1_vectorXd);
   // plot_engine.executeCommand("clf('reset');");
   plot_engine.executeCommand("close(h);");
 
   plot_engine.executeCommand("h=figure;");
   plot_engine.executeCommand("plot(time_vector,beta_vector);");
+  plot_engine.executeCommand("hold on");
+  plot_engine.executeCommand("plot(time_vector,alpha_vector);");
+  plot_engine.executeCommand("hold on");
+  plot_engine.executeCommand("plot(time_vector,dx_1_vector);");
   plot_engine.executeCommand("saveas(h,beta_plot,'fig')");
 
   ROS_INFO("Results have been plotted.");

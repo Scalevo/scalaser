@@ -4,7 +4,7 @@ Changelog for package scalaser
 
 TODO
 ------------------
-
+* write matlab scripts to plot various data.
 * develope algorithm to compute curved stairs
 
 KNOWN BUGS
@@ -26,6 +26,7 @@ NICE TO HAVE
 
 0.0.13 (2015-06-05)
 -------------------
+* Added first draft of Double Edge algorithm
 * Now outputs the count of NULL values within FoV
 * Reinitializing updates values from parameter server correctly now.
 * Implemented better FoV reduction.

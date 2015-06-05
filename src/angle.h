@@ -77,7 +77,10 @@ private:
   // Vectors for Result evaluation
   double time_start;
   std::vector<double> beta_vector;
+  std::vector<double> alpha_vector;
   std::vector<double> time_vector;
+  std::vector<double> dx_1_vector;
+  std::vector<double> dx_2_vector;
 
   // Messages
   std_msgs::Float64MultiArray stair_param;
@@ -87,6 +90,15 @@ private:
   // Beta
   double beta_new;
   double beta_old;
+
+  // Alpha
+  double alpha;
+  double alpha_1;
+  double alpha_2;
+  double dx_1;
+  double dx_2;
+  double diag_1;
+  double diag_2;
 
   // Parameters for motor controler
   double kp;
@@ -107,9 +119,12 @@ public:
   bool alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response);
 
   void computeAngle();
+  void computeAlpha();
+  void computeBeta();
   void computeStair();
   void computeVelocity();
 
+  void setBoundaries();
   void setPosition();
   void setParameters();
 

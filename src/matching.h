@@ -86,6 +86,7 @@ class matching{
 
   // Return functions
   Eigen::VectorXd getV_r() {return v_r;}
+  double getT() {return v_r(1);}
   double getDx() {return v_r(2);}
   double getSe_r() {return se_r;}
   double getDiag() {return sqrt(v_r(1)*v_r(1) + v_r(2)*v_r(2));}
@@ -96,4 +97,3 @@ class matching{
 };
 
 #endif
-
