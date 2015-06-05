@@ -8,6 +8,7 @@
 
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud.h"
+#include "sensor_msgs/LaserScan.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "matlabCppInterface/Engine.hpp"
@@ -35,6 +36,7 @@ class matching{
 
   std::vector<double> xi_temp;
   std::vector<double> zi_temp;
+  std::vector<double> r_temp;
   std::vector<double> xi_match;
   std::vector<double> zi_match;
 
@@ -69,7 +71,7 @@ class matching{
   matching(ros::NodeHandle n_, double phi0_, double dzi_, int fov_s_, int fov_d_, Eigen::VectorXd v0_, int h_);
 
   // main functions
-  void matchCallback(const sensor_msgs::PointCloud::ConstPtr& msg);
+  void matchCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
   void transformMsg();
   void matchTemplate();
 
@@ -80,9 +82,22 @@ class matching{
   // Parameter update functions
   void setParameters(double phi0_, double dzi_, int fov_s_, int fov_d_);
   void setData() {
-    xi_match = xi_temp;
-    zi_match = zi_temp;
-    // xi = xi_temp; zi = zi_temp;
+    int rs_it = 0;  // Resize Itterator
+
+    xi_temp.clear();
+    zi_temp.clear();
+    
+    for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
+      if (r_temp[i] == 0) {
+        rs_it++;
+      }
+      else {
+      xi_temp.push_back(cos(i*ang_inc + min_ang)*r_temp[i]);
+      zi_temp.push_back(sin(i*ang_inc + min_ang)*r_temp[i]);
+      }
+    }
+    // ROS_INFO("%d NULL values within FoV.",rs_it);
+    // ROS_INFO_STREAM("Size of temp Vector: " << xi_temp.size());
   }
   void setFminArgs(Eigen::VectorXd v_r_); 
 

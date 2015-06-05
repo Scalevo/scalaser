@@ -42,8 +42,8 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
   if (request.on) {
 
     // create subscriber
-    sub_1 = n.subscribe("cloud_1", 1, &matching::matchCallback, &cloud_1);
-    sub_2 = n.subscribe("cloud_2", 1, &matching::matchCallback, &cloud_2);
+    sub_1 = n.subscribe("scan_1", 1, &matching::matchCallback, &cloud_1);
+    sub_2 = n.subscribe("scan_2", 1, &matching::matchCallback, &cloud_2);
 
     sub_joint = n.subscribe("/joint_states", 1, &Angle::jointCallback, this);
 
