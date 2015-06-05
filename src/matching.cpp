@@ -30,6 +30,24 @@ void matching::matchCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   }
 }
 
+void matching::setData() {
+  int rs_it = 0;  // Resize Itterator
+
+  xi_temp.clear();
+  zi_temp.clear();
+  
+  for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
+    if (r_temp[i] == 0) {
+      rs_it++;
+    }
+    else {
+    xi_temp.push_back(cos(i*ang_inc + min_ang)*r_temp[i]);
+    zi_temp.push_back(sin(i*ang_inc + min_ang)*r_temp[i]);
+    }
+  }
+  if(rs_it > 0) {ROS_INFO("%d NULL values within FoV.",rs_it);}
+}
+
 void matching::transformMsg() {
 
   // Transform Vector around initial guess
@@ -68,6 +86,7 @@ void matching::setParameters(double phi0_,double dzi_,int fov_s_,int fov_d_) {
   dzi = dzi_;
   fov_s = fov_s_;
   fov_d = fov_d_;
+
   xi.resize(fov_d);
   zi.resize(fov_d);
   xf.resize(fov_d);

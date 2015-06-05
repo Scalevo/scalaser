@@ -6,13 +6,9 @@ r_h(.1016), s(.653837), phi_f(.193897),
 kp(0), vel_fwd(0)
 {
   setParameters();
-  v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
-  phi0 = phi0*PI/180;
 
-  ROS_INFO("Phi0: %f",phi0);
-  ROS_INFO("Field of View Start: %d",fov_s);
-  ROS_INFO("Field of View Window: %d",fov_d);
-  ROS_INFO("Dz Initial: %f",dzi);
+
+  v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
 
   // ROS_INFO("Start Values for fminsearch:");
   // ROS_INFO("stair heigth________h0 = %f",v0(0); 
@@ -121,15 +117,18 @@ void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) 
   dzi = r_h + s*sin(-phi0 + phi_f);
 
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
-  cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
-  cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
+  // cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
+  // cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
+  ros::param::set("/scalaser/phi", phi0);
+  ros::param::set("/scalaser/phi", dzi);
+
   ROS_INFO("Matching Parameters have been updated.");
 }
 
 void Angle::initializeMatching() {
 
   // Strangely this parameter update messes the publishing of the stair_middle tf massively up
-  // setParameters();
+  setParameters();
 
   beta_new = 0;
   beta_old = 0;
@@ -137,8 +136,8 @@ void Angle::initializeMatching() {
   time_vector.clear();
   count = 0;
 
-  // cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
-  // cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
+  cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
+  cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
 
   ROS_INFO("Start time: %f",time_start);
 
@@ -245,6 +244,13 @@ void Angle::setParameters() {
   n.param("/scalaser/kp",kp,0.05);
   n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   n.param("/scalaser/threshold",threshold,0.08);
+
+  phi0 = phi0*PI/180;
+
+  ROS_INFO("Phi0: %f",phi0);
+  ROS_INFO("Field of View Start: %d",fov_s);
+  ROS_INFO("Field of View Window: %d",fov_d);
+  ROS_INFO("Dz Initial: %f",dzi);
 }
 
 void Angle::plot_data() {

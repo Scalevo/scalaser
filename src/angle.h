@@ -71,7 +71,6 @@ private:
   Eigen::VectorXd v0;
   double a;
 
-
   // Average of results of fminsearch
   Eigen::VectorXd v_s;
 

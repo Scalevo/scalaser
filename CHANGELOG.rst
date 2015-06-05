@@ -6,14 +6,10 @@ TODO
 ------------------
 
 * develope algorithm to compute curved stairs
-* use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
 
 KNOWN BUGS
 ------------------
-* FoV method introduced quite the performance loss.
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
-* "a restart of the service now reinitializes fov_s, fov_d, phi0, dzi from the parameter server" This is bugged. Fixme plz.
-* Why does a reinitialization of the parameters cause such a huge mess
 
 
 NICE TO HAVE
@@ -24,55 +20,64 @@ NICE TO HAVE
 * make stair growth dependant of fov_s
 * define beta threshold in launch file
 * make the velocity_forward sent to the MyRio adjustable with dynamic reconfigure
+* use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
-0.0.12 (2015-6-4)
------------------
+0.0.13 (2015-06-05)
+-------------------
+* Now outputs the count of NULL values within FoV
+* Reinitializing updates values from parameter server correctly now.
+* Implemented better FoV reduction.
+* Now subs scan_1/2 instead of cloud_1/2 and does pointcloud transform itself. First the full scan gets added to a vector. Within setData() it then gets reduced and transformed.
+* Dzi and phi0 guesses are received from the myRio.
+
+0.0.12 (2015-06-04)
+-------------------
 * changed FoV reduction to be computed out of the pointcloud points.
 * beta filter has been changed to only publish a beta if it is between +-10°
 
-0.0.11 (2015-6-3)
------------------
+0.0.11 (2015-06-03)
+-------------------
 * added parameter vel_fwd which is published to set_vel as a way to give the motors speed while testing
 * changed the beta filter to reinitialize matching if beta is bigger than +-10°
 * readded the if-condition again to check if the rotation velocity can be published.
 
-0.0.10 (2015-6-2)
------------------
+0.0.10 (2015-06-02)
+-------------------
 * fixed a bug, which caused the stair tf to get all messed up
 * realized, that the pointcloud vector isn't always of size 811 and thus the method of reduzing its fov doesn't work that robust
 
-0.0.9 (2015-5-19)
------------------
+0.0.9 (2015-05-19)
+------------------
 * created launch-file to start the wheelchair alignment for testing
 * updated README
 * added tests section to changelog
 
-0.0.8 (2015-5-18)
------------------
+0.0.8 (2015-05-18)
+------------------
 * robot model of the wheelchair has been created in the package SCALEBOT 
 * dzi, phi0 are now computed out of the lambda positions received from the MyRIO -> this might only be needed during initialization to save computation time.
 * if beta values are unusual for a number of computations, matching gets reinitialized
 * fov_s & fov_d are editable before restart of the service
 
-0.0.7 (2015-5-15)
------------------
+0.0.7 (2015-05-15)
+------------------
 * changed the velocity publisher from Float64MultiArray to String
 * now plots beta after service is finished
 * replaced all 3.14 values with PI
 * service now only starts the initialization if pointclouds are published
 
-0.0.6 (2015-5-13)
------------------
+0.0.6 (2015-05-13)
+------------------
 * resets beta_old and beta_new before restarting service
 * added complete wheelchair model to visualtization
 * created launch-file to start the visualization (stair_viz.launch)
 * added rviz file
 * stair visualization now grows dependant on distance traveled on the stairs
 
-0.0.5 (2015-5-12)
------------------
+0.0.5 (2015-05-12)
+------------------
 * now sets boundary constrains of dx to "dx_old ± (stair-diagonal)/2" to stop phase offset completely
 * changed initializer vector v0 from <vector> to Eigen
 * now initializes v0 and boundry contraints with the start of the ros service. The result vector of the first matching are used as the start values for the first matching of the other side.
@@ -93,7 +98,7 @@ NICE TO HAVE
 
   As it turned out was the modulo constraint of beta the source of the randomly occuring phase offset at around 40 seconds in the bag file "up_turn_down_pointcloud.bag". It happend always when one dx was close to the modulo threshold while the other was bigger than the threshold. This lead to a big difference between dx_1 and dx_2 which led to a unexpected big beta.
 
-0.0.4 (2015-5-11)
+0.0.4 (2015-05-11)
 ------------------
 * computes the angle only if pointclouds are published
 * implemented service which starts the wheelchair alignment

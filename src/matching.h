@@ -81,29 +81,11 @@ class matching{
 
   // Parameter update functions
   void setParameters(double phi0_, double dzi_, int fov_s_, int fov_d_);
-  void setData() {
-    int rs_it = 0;  // Resize Itterator
-
-    xi_temp.clear();
-    zi_temp.clear();
-    
-    for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
-      if (r_temp[i] == 0) {
-        rs_it++;
-      }
-      else {
-      xi_temp.push_back(cos(i*ang_inc + min_ang)*r_temp[i]);
-      zi_temp.push_back(sin(i*ang_inc + min_ang)*r_temp[i]);
-      }
-    }
-    // ROS_INFO("%d NULL values within FoV.",rs_it);
-    // ROS_INFO_STREAM("Size of temp Vector: " << xi_temp.size());
-  }
+  void setData();
   void setFminArgs(Eigen::VectorXd v_r_); 
 
   // Return functions
   Eigen::VectorXd getV_r() {return v_r;}
-  // double getDx() {return fmod(v_r(2), sqrt(v_r(0)*v_r(0)+v_r(1)*v_r(1)));}
   double getDx() {return v_r(2);}
   double getSe_r() {return se_r;}
   double getDiag() {return sqrt(v_r(1)*v_r(1) + v_r(2)*v_r(2));}
