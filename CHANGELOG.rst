@@ -4,6 +4,7 @@ Changelog for package scalaser
 
 TODO
 ------------------
+* add interpolation over step diagonal to enable smooth ride up stairs
 * write matlab scripts to plot various data.
 * develope algorithm to compute curved stairs
 

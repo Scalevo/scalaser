@@ -128,7 +128,7 @@ public:
   void setPosition();
   void setParameters();
 
-  void plot_data();
+  void plot_data(std::vector<double> data_vector);
 };
 
 #endif

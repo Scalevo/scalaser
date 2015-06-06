@@ -87,7 +87,18 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     ROS_INFO("Average frequency:  %f Hz",count/(ros::Time::now().toSec() - time_start));
 
     // plot data in a new matlab engine
-    plot_data();
+
+
+    if (plot_engine.initialize() && plot_engine.good()) ROS_INFO("Plot engine succesfully initialized.");
+
+    plot_engine.changeWorkingDirectory("~/catkin_ws/src/scalaser/matlab");
+
+    plot_engine.showWorkspace();
+
+    plot_data(beta_vector);
+    plot_data(alpha_vector);
+    plot_data(dx_1_vector);
+    plot_data(dx_2_vector);
 
     return true;
   }
@@ -133,7 +144,11 @@ void Angle::initializeMatching() {
   beta_new = 0;
   beta_old = 0;
   beta_vector.clear();
+  alpha_vector.clear();
+  dx_1_vector.clear();
+  dx_2_vector.clear();
   time_vector.clear();
+
   count = 0;
 
   cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
@@ -159,15 +174,15 @@ void Angle::setBoundaries() {
 
 void Angle::computeAngle() {
 
-  dx_1 = cloud_1.getDx();
-  dx_2 = cloud_2.getDx();
+  dx_1 = fabs(cloud_1.getDx());
+  dx_2 = fabs(cloud_2.getDx());
   diag_1 = cloud_1.getDiag();
   diag_2 = cloud_2.getDiag();
 
 // Experimental for Curved
 
   
-  if (dx_1 > 0.8*diag_1 || dx_2 > 0.8*diag_2) {
+  if (fabs(dx_1) > 0.8*diag_1 || fabs(dx_2) > 0.8*diag_2) {
     v0 = cloud_1.getV_r();
     v0(2) = 0;
     setBoundaries();
@@ -196,17 +211,18 @@ void Angle::computeAlpha() {
   ROS_INFO("ALPHA_2: %f°", 180/PI*(alpha_2));
   ROS_INFO("ALPHA: %f°", alpha);
   ROS_INFO("BETAA: %f°", beta_new);
+  ROS_INFO("BETAB: %f°", 180/PI*(alpha_1));
 }
 
 void Angle::computeBeta() {
 
   // beta_new = 180/PI*(alpha_1 - alpha_2)/2;
-  // beta_new = 180/PI*atan((dx_2-dx_1)/a);
+  // beta_new = 180/PI*atan((dx_2 - dx_1)/a);
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
   if (fabs(beta_new) < 10) {
 
-    beta.data = beta_new;
+    beta.data = 180/PI*(alpha_1);
     pub_1.publish(beta);
 
     ROS_INFO("Time: %f",ros::Time::now().toSec()-time_start);
@@ -214,20 +230,20 @@ void Angle::computeBeta() {
     alpha_vector.push_back(180/PI*(alpha_1 + alpha_2));
     beta_vector.push_back(beta_new);
 
-    v0 = cloud_1.getV_r();
-    ROS_INFO("Values for Cloud_1:");
-    ROS_INFO("stair heigth________h = %f",v0(0)); 
-    ROS_INFO("stair depth_________t = %f",v0(1));
-    ROS_INFO("phase offset_______dx = %f",v0(2));
-    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
-    dx_1_vector.push_back(v0(2));
-    v0 = cloud_2.getV_r();
-    ROS_INFO("Values for Cloud_2:");
-    ROS_INFO("stair heigth________h = %f",v0(0)); 
-    ROS_INFO("stair depth_________t = %f",v0(1));
-    ROS_INFO("phase offset_______dx = %f",v0(2));
-    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
-    dx_2_vector.push_back(v0(2));
+      v0 = cloud_1.getV_r();
+      ROS_INFO("Values for Cloud_1:");
+      ROS_INFO("stair heigth________h = %f",v0(0)); 
+      ROS_INFO("stair depth_________t = %f",v0(1));
+      ROS_INFO("phase offset_______dx = %f",v0(2)) ;
+      ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+      dx_1_vector.push_back(v0(2));
+      v0 = cloud_2.getV_r();
+      ROS_INFO("Values for Cloud_2:");
+      ROS_INFO("stair heigth________h = %f",v0(0)); 
+      ROS_INFO("stair depth_________t = %f",v0(1));
+      ROS_INFO("phase offset_______dx = %f",v0(2));
+      ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+      dx_2_vector.push_back(v0(2));
 
     wrong_beta_count = 0;
   }
@@ -238,7 +254,6 @@ void Angle::computeBeta() {
     if (wrong_beta_count > 3) initializeMatching();
   }
   beta_old = beta.data;
-  ROS_INFO("BETAB: %f°", beta_old);
 }
 
 
@@ -321,36 +336,24 @@ void Angle::setParameters() {
   ROS_INFO("Parameters from Server have been updated.");
 }
 
-void Angle::plot_data() {
-  // plot_engine.initialize();
-  if (plot_engine.initialize() && plot_engine.good()) ROS_INFO("Plot engine succesfully initialized.");
-
-  Eigen::VectorXd beta_vectorXd(beta_vector.size());
-  Eigen::VectorXd alpha_vectorXd(alpha_vector.size());
+void Angle::plot_data(std::vector<double> data_vector) {
+  Eigen::VectorXd data_vectorXd(data_vector.size());
   Eigen::VectorXd time_vectorXd(time_vector.size());
-  Eigen::VectorXd dx_1_vectorXd(time_vector.size());
-  for (int i=0; i < beta_vector.size(); ++i) beta_vectorXd[i] = beta_vector[i];
-  for (int i=0; i < alpha_vector.size(); ++i) alpha_vectorXd[i] = alpha_vector[i];
+
+  for (int i=0; i < data_vector.size(); ++i) data_vectorXd[i] = data_vector[i];
   for (int i=0; i < time_vector.size(); ++i) time_vectorXd[i] = time_vector[i];
-  for (int i=0; i < dx_1_vector.size(); ++i) dx_1_vectorXd[i] = dx_1_vector[i];
 
-  plot_engine.put("beta_vector",beta_vectorXd);
-  plot_engine.put("alpha_vector",alpha_vectorXd);
+  plot_engine.put("data_vector", data_vectorXd);
   plot_engine.put("time_vector",time_vectorXd);
-  plot_engine.put("dx_1_vector",dx_1_vectorXd);
-  // plot_engine.executeCommand("clf('reset');");
-  plot_engine.executeCommand("close(h);");
 
-  plot_engine.executeCommand("h=figure;");
-  plot_engine.executeCommand("plot(time_vector,beta_vector);");
-  plot_engine.executeCommand("hold on");
-  plot_engine.executeCommand("plot(time_vector,alpha_vector);");
-  plot_engine.executeCommand("hold on");
-  plot_engine.executeCommand("plot(time_vector,dx_1_vector);");
-  plot_engine.executeCommand("saveas(h,beta_plot,'fig')");
+  plot_engine.executeCommand("plot_data(time_vector, data_vector)");
+
 
   ROS_INFO("Results have been plotted.");
   ROS_INFO("Plot has been saved to file.");
+
+  data_vector.clear();
+
   // To save a std::vector into a .txt file use:
   // std::ofstream file_beta;
   // file_beta.open("/home/miro/Desktop/cpp2matlab/beta_vector.txt");

@@ -183,7 +183,11 @@ void matching::fillEngine() {
   engine.get("xf", xf);
   engine.get("zf", zf);
 
-  if(se_r > threshold) ROS_WARN("Pointcloud has not been matched properly. Error: %f",se_r);
-  lb(2) = -10; // Set lower bound of phase of set to ~INF
+  if (se_r < threshold) {
+    setFminArgs(v_r);
+  }
+  else {
+    ROS_WARN("Pointcloud has not been matched properly. Error: %f", se_r);
+  }
 
 }
