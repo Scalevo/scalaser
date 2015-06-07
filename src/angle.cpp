@@ -293,7 +293,7 @@ void Angle::computeVelocity() {
   std::ostringstream buff_2;
 
   if(cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
-    buff_2 << beta.data * kp;
+    buff_2 << - beta.data * kp;
     velo.data += buff_2.str();
   }
   else {

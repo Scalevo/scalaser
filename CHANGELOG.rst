@@ -25,8 +25,9 @@ NICE TO HAVE
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
-0.0.14 (2015-06-06)
+0.0.14 (2015-06-08)
 -------------------
+* changed the published vel_rot to be negative to compensate for the negative z-axis in LabView
 * beta plot gets saved with current timestamp to the matlab folder
 * now all scanpoints which are closer than a threshold get discarded
 * info message is added which indicates the switch from one edge to another
