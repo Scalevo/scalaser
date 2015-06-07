@@ -37,7 +37,7 @@ void matching::setData() {
   zi_temp.clear();
   
   for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
-    if (r_temp[i] == 0) {
+    if (r_temp[i] < 0.3) {
       rs_it++;
     }
     else {
@@ -45,7 +45,7 @@ void matching::setData() {
     zi_temp.push_back(sin(i*ang_inc + min_ang)*r_temp[i]);
     }
   }
-  if(rs_it > 0) {ROS_INFO("%d NULL values within FoV.",rs_it);}
+  if(rs_it > 0) {ROS_INFO("%d INVALID values within FoV of Sensor %d.", rs_it, h);}
 }
 
 void matching::transformMsg() {

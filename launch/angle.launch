@@ -8,8 +8,8 @@
   <param name="/scalaser/kp" type="double" value="0.1" />
   <param name="/scalaser/vel_fwd" type="double" value="0.0" />
   <param name="/scalaser/threshold" type="double" value="0.010" />
-
   <node pkg="scalaser" type="Angle" name="angle" output="screen" >
   </node>
+
 
 </launch>

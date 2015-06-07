@@ -112,6 +112,7 @@ private:
 public:
   Angle(ros::NodeHandle n_);
 
+  void initializePlotEngine();
   void initializeMatching();
   void timerCallback(const ros::TimerEvent& event);
   void jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state);
@@ -128,7 +129,8 @@ public:
   void setPosition();
   void setParameters();
 
-  void plot_data(std::vector<double> data_vector);
+  void plotData();
+  void plotData(std::vector<double> data_vector);
 };
 
 #endif

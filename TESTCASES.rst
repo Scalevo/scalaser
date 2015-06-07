@@ -2,6 +2,14 @@
 TESTCASES
 ^^^^^^^^^
 
+* test old beta control
+* turn on stairs
+* test new beta control
+
+* beta vorzeichen problem hochfahren kp - runterfahren kp +
+* laser scan filtern auf komische werte
+
+
 (2015-xx-xx) test automatic climb of curved stairs 
 --------------------
 Test Criteria:
