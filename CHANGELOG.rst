@@ -5,7 +5,6 @@ Changelog for package scalaser
 TODO
 ------------------
 * add interpolation over step diagonal to enable smooth ride up stairs
-* write matlab scripts to plot various data.
 * develope algorithm to compute curved stairs
 
 KNOWN BUGS
@@ -27,6 +26,9 @@ NICE TO HAVE
 
 0.0.14 (2015-06-08)
 -------------------
+* changed matchTemplate() from void to VectorXd in order to directly copy v_r to angle.cpp
+* added marker which displays the position of the edge around the wheelchair orients itself
+* fixed a bug which caused beta to change sign while going up or down stairs
 * changed the published vel_rot to be negative to compensate for the negative z-axis in LabView
 * beta plot gets saved with current timestamp to the matlab folder
 * now all scanpoints which are closer than a threshold get discarded

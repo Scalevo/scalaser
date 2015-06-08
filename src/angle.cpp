@@ -3,7 +3,8 @@
 Angle::Angle(ros::NodeHandle n_):
 n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0), wrong_beta_count(0),
 r_h(.1016), s(.653837), phi_f(.193897),
-kp(0), vel_fwd(0)
+kp(0), vel_fwd(0),
+v_r_1(2), v_r_2(2)
 {
   setParameters();
 
@@ -38,6 +39,7 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
   if (request.on) {
 
     initializePlotEngine();
+    initializeEdge();
 
     // create subscriber
     sub_1 = n.subscribe("scan_1", 1, &matching::matchCallback, &cloud_1);
@@ -47,11 +49,11 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
 
     // advertise topics
-    pub_1 = n.advertise<std_msgs::Float64>("/beta",100);
-    pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",100);
+    pub_1 = n.advertise<std_msgs::Float64>("/beta",1);
+    pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",1);
     // pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/set_vel",100);
-    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",100);
-
+    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",1);
+    pub_edge_marker = n.advertise<visualization_msgs::Marker>("edge_marker", 1);
 
     while (sub_1.getNumPublishers() == 0 || sub_2.getNumPublishers() == 0) {
       sleep(1);
@@ -79,6 +81,7 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     pub_2.shutdown();
     // pub_velocity.shutdown();
     pub_s_velocity.shutdown();
+    pub_edge_marker.shutdown();
 
     // stop main loop timer
     main_timer.stop();
@@ -109,14 +112,15 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
 
     cloud_1.setData();
     cloud_2.setData();
-    cloud_1.matchTemplate();
-    cloud_2.matchTemplate();
+    v_r_1 = cloud_1.matchTemplate();
+    v_r_2 = cloud_2.matchTemplate();
 
     computeAngle();
     computeStair();
     computeVelocity();
-    setPosition();
-    
+    pubStairParameters();
+    pubEdge();
+
     ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     count++;
   }
@@ -160,7 +164,7 @@ void Angle::initializeMatching() {
   ROS_INFO("Start time: %f",time_start);
   
   setBoundaries();
-// 
+
   time_start = ros::Time::now().toSec();
   count++;
 }
@@ -169,15 +173,15 @@ void Angle::setBoundaries() {
   cloud_1.setData();
   cloud_2.setData();
   cloud_1.setFminArgs(v0);
-  cloud_1.matchTemplate();
-  cloud_2.setFminArgs(cloud_1.getV_r());
-  cloud_2.matchTemplate();
+  v_r_1 = cloud_1.matchTemplate();
+  cloud_2.setFminArgs(v_r_1);
+  v_r_2 = cloud_2.matchTemplate();
 }
 
 void Angle::computeAngle() {
 
-  dx_1 = fabs(cloud_1.getDx());
-  dx_2 = fabs(cloud_2.getDx());
+  dx_1 = cloud_1.getDx();
+  dx_2 = cloud_2.getDx();
   diag_1 = cloud_1.getDiag();
   diag_2 = cloud_2.getDiag();
 
@@ -304,7 +308,7 @@ void Angle::computeVelocity() {
   pub_s_velocity.publish(velo);
 }
 
-void Angle::setPosition() {
+void Angle::pubStairParameters() {
 
   double h = v_s(0);
   double t = v_s(1);
@@ -319,6 +323,8 @@ void Angle::setPosition() {
   br.sendTransform(tf::StampedTransform(transform,ros::Time::now(),"laser_mount_link","stair_middle"));
   ROS_INFO_ONCE("Transform to stair sent");
 }
+
+
 
 void Angle::setParameters() {
   n.param("/scalaser/fov_s",fov_s,200);
@@ -378,4 +384,42 @@ void Angle::plotData(std::vector<double> data_vector) {
     // file_time.open("/home/miro/Desktop/cpp2matlab/time_vector.txt");
     // for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
     // file_time.close();
+}
+
+void Angle::initializeEdge() {
+
+  edge_marker.header.frame_id = "laser_mount_link";
+  edge_marker.header.stamp = ros::Time::now();
+  edge_marker.ns = "edge";
+  edge_marker.id = 1;
+  edge_marker.type = visualization_msgs::Marker::ARROW;
+  edge_marker.action = 0;
+  //edge_marker.pose.orientation.w = 1.0;
+  edge_marker.scale.x = 0.05;
+  edge_marker.scale.y = 0.05;
+  edge_marker.scale.z = 0.001;
+  edge_marker.color.a = 1.0; // Don't forget to set the alpha!
+  edge_marker.color.r = 0.0;
+  edge_marker.color.g = 1.0;
+  edge_marker.color.b = 0.0;
+
+}
+
+void Angle::pubEdge() {
+
+  // Publish Edge around which the wheelchair orients it
+  geometry_msgs::Point p;
+
+  p.x = -( cos(- phi0 - v_r_1(4))*-v_r_1(2) + sin(- phi0 - v_r_1(4))*(dzi + v_r_1(3)));
+  p.y = -a/2;
+  p.z = -(-sin(- phi0 - v_r_1(4))*-v_r_1(2) + cos(- phi0 - v_r_1(4))*(dzi + v_r_1(3)));
+  edge_marker.points.push_back(p);
+
+  p.x = -( cos(- phi0 - v_r_2(4))*-v_r_2(2) + sin(- phi0 - v_r_2(4))*(dzi + v_r_2(3)));
+  p.y = a/2;
+  p.z = -(-sin(- phi0 - v_r_2(4))*-v_r_2(2) + cos(- phi0 - v_r_2(4))*(dzi + v_r_2(3)));
+  edge_marker.points.push_back(p);
+
+  pub_edge_marker.publish(edge_marker);
+  edge_marker.points.clear();
 }

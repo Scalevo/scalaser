@@ -1,19 +1,21 @@
 #ifndef ANGLE_H
 #define ANGLE_H
-
+// C++
 #include <boost/cstdint.hpp>
 #include <math.h>
 #include <fstream>
-
+// ROS
 #include "ros/ros.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/String.h"
 #include "sensor_msgs/JointState.h"
 #include "tf/transform_broadcaster.h"
+#include "visualization_msgs/Marker.h"
+// Matlab
 #include "matlabCppInterface/Engine.hpp"
 #include "matlabCppInterface/MatFile.hpp"
-
+// Scalevo
 #include "scalevo_msgs/Starter.h"
 
 
@@ -42,8 +44,10 @@ private:
   ros::Publisher pub_2;		     // stairParam
   // ros::Publisher pub_velocity;
   ros::Publisher pub_s_velocity;
+  ros::Publisher pub_edge_marker;
 
-
+  // Marker
+  visualization_msgs::Marker edge_marker;
 
   // Tf
   tf::TransformBroadcaster br;
@@ -100,6 +104,11 @@ private:
   double diag_1;
   double diag_2;
 
+  Eigen::VectorXd v_r_1;
+  Eigen::VectorXd v_r_2;
+
+
+
   // Parameters for motor controler
   double kp;
   double vel_fwd;
@@ -109,11 +118,16 @@ private:
   int count;
   int wrong_beta_count;
 
+  // Marker
+
+
 public:
   Angle(ros::NodeHandle n_);
 
   void initializePlotEngine();
   void initializeMatching();
+  void initializeEdge();
+
   void timerCallback(const ros::TimerEvent& event);
   void jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state);
 
@@ -125,8 +139,10 @@ public:
   void computeStair();
   void computeVelocity();
 
+  void pubStairParameters();
+  void pubEdge();
+
   void setBoundaries();
-  void setPosition();
   void setParameters();
 
   void plotData();

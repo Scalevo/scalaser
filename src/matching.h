@@ -73,7 +73,7 @@ class matching{
   // main functions
   void matchCallback(const sensor_msgs::LaserScan::ConstPtr& msg);
   void transformMsg();
-  void matchTemplate();
+  Eigen::VectorXd matchTemplate();
 
   // cpp to matlab connection functions
   void fillMatfile(); // Fast way of sending data to matlab

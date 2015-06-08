@@ -57,11 +57,12 @@ void matching::transformMsg() {
   }
 }
 
-void matching::matchTemplate() {
+Eigen::VectorXd matching::matchTemplate() {
   transformMsg();
   fillMatfile();
   // fillEngine();
   publishSe_r();
+  return v_r;
 }
 
 void matching::publishSe_r() {
