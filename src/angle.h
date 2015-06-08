@@ -94,7 +94,7 @@ private:
   // Beta
   double beta_new;
   double beta_old;
-
+  double d_beta; // change of beta
   // Alpha
   double alpha;
   double alpha_1;

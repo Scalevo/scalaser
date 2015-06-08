@@ -4,8 +4,6 @@ Changelog for package scalaser
 
 TODO
 ------------------
-* add interpolation over step diagonal to enable smooth ride up stairs
-* develope algorithm to compute curved stairs
 
 KNOWN BUGS
 ------------------
@@ -14,20 +12,21 @@ KNOWN BUGS
 
 NICE TO HAVE
 ------------------
+* clean up v_r_1 and dx_1 in angle.cpp
 * add initialization for start and end of stairs to determine when to stop the stair model
 * add timestamp to published messages
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
 * make stair growth dependant of fov_s
 * define beta threshold in launch file
 * make the velocity_forward sent to the MyRio adjustable with dynamic reconfigure
-* use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
+* (use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°)
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
 0.0.14 (2015-06-08)
 -------------------
 * fixed incorrect alpha computation --> hurray :D
-
+* implemented interpolation between edges to get a constant alignment over the stairs
 
 0.0.14 (2015-06-08)
 -------------------

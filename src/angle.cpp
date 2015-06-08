@@ -185,8 +185,6 @@ void Angle::computeAngle() {
   diag_2 = cloud_2.getDiag();
 
 // Experimental for Curved
-
-  
   if (fabs(dx_1) > 0.8*diag_1 || fabs(dx_2) > 0.8*diag_2) {
     v0 = cloud_1.getV_r();
     v0(2) = 0;
@@ -222,10 +220,13 @@ void Angle::computeAlpha() {
 
 void Angle::computeBeta() {
 
-  // beta_new = 180/PI*(alpha_1 - alpha_2)/2;
-  // beta_new = 180/PI*atan((dx_2 - dx_1)/a);
+  // beta_new = 180/PI*atan((dx_2 - dx_1)/a); // Single Edge Beta Computation
 
   beta_new = 180/PI*(alpha_1 - alpha_2)/2;
+
+  // Linear interpolation between two edges
+  d_beta = alpha*(dx_2 - dx_1)/(diag_2 - diag_1);
+  beta_new += d_beta; // + or - not sure yet
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
   if (fabs(beta_new) < 10) {
@@ -238,20 +239,20 @@ void Angle::computeBeta() {
     alpha_vector.push_back(180/PI*(alpha_1 + alpha_2));
     beta_vector.push_back(beta_new);
 
-      v0 = cloud_1.getV_r();
-      ROS_INFO("Values for Cloud_1:");
-      ROS_INFO("stair heigth________h = %f",v0(0)); 
-      ROS_INFO("stair depth_________t = %f",v0(1));
-      ROS_INFO("phase offset_______dx = %f",v0(2)) ;
-      ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
-      // dx_1_vector.push_back(cloud_1.getDiag());
-      v0 = cloud_2.getV_r();
-      ROS_INFO("Values for Cloud_2:");
-      ROS_INFO("stair heigth________h = %f",v0(0)); 
-      ROS_INFO("stair depth_________t = %f",v0(1));
-      ROS_INFO("phase offset_______dx = %f",v0(2));
-      ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
-      dx_2_vector.push_back(10*(cloud_2.getDiag() - cloud_1.getDiag()));
+    v0 = cloud_1.getV_r();
+    ROS_INFO("Values for Cloud_1:");
+    ROS_INFO("stair heigth________h = %f",v0(0)); 
+    ROS_INFO("stair depth_________t = %f",v0(1));
+    ROS_INFO("phase offset_______dx = %f",v0(2)) ;
+    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+    dx_1_vector.push_back(v0(2));
+    v0 = cloud_2.getV_r();
+    ROS_INFO("Values for Cloud_2:");
+    ROS_INFO("stair heigth________h = %f",v0(0)); 
+    ROS_INFO("stair depth_________t = %f",v0(1));
+    ROS_INFO("phase offset_______dx = %f",v0(2));
+    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+    dx_2_vector.push_back(v0(2));
 
     wrong_beta_count = 0;
   }
@@ -348,7 +349,7 @@ void Angle::plotData() {
   plotData(beta_vector);
   plotData(alpha_vector);
   // plotData(dx_1_vector);
-  plotData(dx_2_vector);
+  // plotData(dx_2_vector);
 
   plot_engine.executeCommand("xlabel('Time [s]')");
   plot_engine.executeCommand("legend('beta [°]', 'alpha [°]', 'step diagonal delta [m]')");
@@ -399,7 +400,6 @@ void Angle::initializeEdge() {
   edge_marker.color.r = 0.0;
   edge_marker.color.g = 1.0;
   edge_marker.color.b = 0.0;
-
 }
 
 void Angle::pubEdge() {
