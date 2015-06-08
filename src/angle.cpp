@@ -37,7 +37,6 @@ v_r_1(2), v_r_2(2)
 
 bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response) {
   if (request.on) {
-
     initializePlotEngine();
     initializeEdge();
 
@@ -213,18 +212,20 @@ void Angle::computeAlpha() {
   alpha_1 = atan((dx_2 - dx_1) / a);
   alpha_2 = atan(((diag_2 - dx_2) - (diag_1 - dx_1)) / a);
   alpha = 180/PI*(alpha_1 + alpha_2);
-  beta_new = 180/PI*(alpha_1 - alpha_2)/2;
-  ROS_INFO("ALPHA_1: %f°", 180/PI*(alpha_1));
-  ROS_INFO("ALPHA_2: %f°", 180/PI*(alpha_2));
-  ROS_INFO("ALPHA: %f°", alpha);
-  ROS_INFO("BETAA: %f°", beta_new);
-  ROS_INFO("BETAB: %f°", 180/PI*(alpha_1));
+  
+  // ROS_INFO("ALPHA_1: %f°", 180/PI*(alpha_1));
+  // ROS_INFO("ALPHA_2: %f°", 180/PI*(alpha_2));
+  // ROS_INFO("ALPHA: %f°", alpha);
+  // ROS_INFO("BETAA: %f°", beta_new);
+  // ROS_INFO("BETAB: %f°", 180/PI*(alpha_1));
 }
 
 void Angle::computeBeta() {
 
   // beta_new = 180/PI*(alpha_1 - alpha_2)/2;
   // beta_new = 180/PI*atan((dx_2 - dx_1)/a);
+
+  beta_new = 180/PI*(alpha_1 - alpha_2)/2;
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
   if (fabs(beta_new) < 10) {
@@ -262,7 +263,6 @@ void Angle::computeBeta() {
   }
   beta_old = beta.data;
 }
-
 
 void Angle::computeStair() {
   v_s = (cloud_1.getV_r()+cloud_2.getV_r())/2*cos(beta.data*PI/180);
@@ -323,8 +323,6 @@ void Angle::pubStairParameters() {
   br.sendTransform(tf::StampedTransform(transform,ros::Time::now(),"laser_mount_link","stair_middle"));
   ROS_INFO_ONCE("Transform to stair sent");
 }
-
-
 
 void Angle::setParameters() {
   n.param("/scalaser/fov_s",fov_s,200);
@@ -387,7 +385,6 @@ void Angle::plotData(std::vector<double> data_vector) {
 }
 
 void Angle::initializeEdge() {
-
   edge_marker.header.frame_id = "laser_mount_link";
   edge_marker.header.stamp = ros::Time::now();
   edge_marker.ns = "edge";
@@ -406,7 +403,6 @@ void Angle::initializeEdge() {
 }
 
 void Angle::pubEdge() {
-
   // Publish Edge around which the wheelchair orients it
   geometry_msgs::Point p;
 

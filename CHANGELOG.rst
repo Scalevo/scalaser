@@ -26,6 +26,11 @@ NICE TO HAVE
 
 0.0.14 (2015-06-08)
 -------------------
+* fixed incorrect alpha computation --> hurray :D
+
+
+0.0.14 (2015-06-08)
+-------------------
 * changed matchTemplate() from void to VectorXd in order to directly copy v_r to angle.cpp
 * added marker which displays the position of the edge around the wheelchair orients itself
 * fixed a bug which caused beta to change sign while going up or down stairs

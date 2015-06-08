@@ -89,7 +89,7 @@ class matching{
   double getT() {return v_r(1);}
   double getDx() {return v_r(2);}
   double getSe_r() {return se_r;}
-  double getDiag() {return sqrt(v_r(1)*v_r(1) + v_r(2)*v_r(2));}
+  double getDiag() {return sqrt(v_r(0)*v_r(0) + v_r(1)*v_r(1));}
 
   // Publishers
   void publishSe_r();
