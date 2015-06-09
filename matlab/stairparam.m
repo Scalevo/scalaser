@@ -10,16 +10,16 @@ handle = @delta;
 con_options = struct('Algorithm', 'sqp'); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
 % search_options = struct('MaxFunEvals', 1000, 'MaxIter', 1000); % 'OutputFcn', @outfun,,'PlotFcns',@optimplotfval
 
-% [v_r,se_r] = fminsearch(handle,v0_,search_options);
-[v_r,se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub, [],con_options);
+% [v_r, se_r] = fminsearch(handle,v0_,search_options);
+[v_r, se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub, [],con_options);
 
 %disp(v_r);
 
-    % subplot(2,1,hs);
-    % plot(xi,zi,'x');
+    % subplot(2, 1, hs);
+    % plot(xi, zi, 'x');
     % axis equal tight
     % hold on;
-    % plot(xi,z_r,'o')
+    % plot(xi, z_r, 'o')
     % axis equal tight
     % hold off;
     % xlabel(hs);
@@ -34,7 +34,7 @@ con_options = struct('Algorithm', 'sqp'); % 'OutputFcn', @outfun,,'PlotFcns',@op
         h = sqrt(v(1))^2;
         t = sqrt(v(2))^2;
         dx    = v(3);
-        dz    = v(4);
+        dz    = v(4); 
         theta = v(5);
 
         xi = cos(theta)*x0 - sin(theta)*z0;
@@ -43,7 +43,7 @@ con_options = struct('Algorithm', 'sqp'); % 'OutputFcn', @outfun,,'PlotFcns',@op
         zi = zi + dz;
         xi = xi + dx; 
         
-        eta = atan2(t,h);
+        eta = atan2(t, h);
 %         a = h/2*cos(eta);           % Parameters used for fourier transform
 %         b = t/2*sin(eta);
 %         L = 2*(a + b);

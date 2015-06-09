@@ -5,8 +5,6 @@ Changelog for package scalaser
 TODO
 ------------------
 
-* develope algorithm to compute curved stairs
-
 KNOWN BUGS
 ------------------
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
@@ -14,18 +12,36 @@ KNOWN BUGS
 
 NICE TO HAVE
 ------------------
+* clean up v_r_1 and dx_1 in angle.cpp
 * add initialization for start and end of stairs to determine when to stop the stair model
 * add timestamp to published messages
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
 * make stair growth dependant of fov_s
 * define beta threshold in launch file
 * make the velocity_forward sent to the MyRio adjustable with dynamic reconfigure
-* use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°
+* (use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°)
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
+0.0.14 (2015-06-08)
+-------------------
+* fixed incorrect alpha computation --> hurray :D
+* implemented interpolation between edges to get a constant alignment over the stairs
+
+0.0.14 (2015-06-08)
+-------------------
+* changed matchTemplate() from void to VectorXd in order to directly copy v_r to angle.cpp
+* added marker which displays the position of the edge around the wheelchair orients itself
+* fixed a bug which caused beta to change sign while going up or down stairs
+* changed the published vel_rot to be negative to compensate for the negative z-axis in LabView
+* beta plot gets saved with current timestamp to the matlab folder
+* now all scanpoints which are closer than a threshold get discarded
+* info message is added which indicates the switch from one edge to another
+* the data from plot_data() gets continiously plotted after 20 timer callbacks
+
 0.0.13 (2015-06-05)
 -------------------
+* Added first draft of Double Edge algorithm
 * Now outputs the count of NULL values within FoV
 * Reinitializing updates values from parameter server correctly now.
 * Implemented better FoV reduction.

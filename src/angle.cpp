@@ -3,7 +3,8 @@
 Angle::Angle(ros::NodeHandle n_):
 n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0), wrong_beta_count(0),
 r_h(.1016), s(.653837), phi_f(.193897),
-kp(0), vel_fwd(0)
+kp(0), vel_fwd(0),
+v_r_1(2), v_r_2(2)
 {
   setParameters();
 
@@ -36,6 +37,8 @@ kp(0), vel_fwd(0)
 
 bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response) {
   if (request.on) {
+    initializePlotEngine();
+    initializeEdge();
 
     // create subscriber
     sub_1 = n.subscribe("scan_1", 1, &matching::matchCallback, &cloud_1);
@@ -45,11 +48,11 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
 
     // advertise topics
-    pub_1 = n.advertise<std_msgs::Float64>("/beta",100);
-    pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",100);
+    pub_1 = n.advertise<std_msgs::Float64>("/beta",1);
+    pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",1);
     // pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/set_vel",100);
-    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",100);
-
+    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",1);
+    pub_edge_marker = n.advertise<visualization_msgs::Marker>("edge_marker", 1);
 
     while (sub_1.getNumPublishers() == 0 || sub_2.getNumPublishers() == 0) {
       sleep(1);
@@ -77,6 +80,7 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     pub_2.shutdown();
     // pub_velocity.shutdown();
     pub_s_velocity.shutdown();
+    pub_edge_marker.shutdown();
 
     // stop main loop timer
     main_timer.stop();
@@ -86,12 +90,20 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     ROS_INFO("Duration:           %f", ros::Time::now().toSec() - time_start);
     ROS_INFO("Average frequency:  %f Hz",count/(ros::Time::now().toSec() - time_start));
 
-    // plot data in a new matlab engine
-    plot_data();
-
+    plotData();
+    plot_engine.executeCommand("savefig(datestr(now))");
     return true;
   }
   return true;
+}
+
+void Angle::initializePlotEngine() {
+  // plot data in a new matlab engine
+  if (plot_engine.initialize() && plot_engine.good()) ROS_INFO("Plot engine succesfully initialized.");
+  plot_engine.changeWorkingDirectory("~/catkin_ws/src/scalaser/matlab");
+  // plot_engine.showWorkspace();
+  plotData(beta_vector);
+
 }
 
 void Angle::timerCallback(const ros::TimerEvent& event) {
@@ -99,16 +111,21 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
 
     cloud_1.setData();
     cloud_2.setData();
-    cloud_1.matchTemplate();
-    cloud_2.matchTemplate();
+    v_r_1 = cloud_1.matchTemplate();
+    v_r_2 = cloud_2.matchTemplate();
 
     computeAngle();
     computeStair();
     computeVelocity();
-    setPosition();
-    
+    pubStairParameters();
+    pubEdge();
+
     ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     count++;
+  }
+
+  if (fmod(count,20) == 0) {
+    plotData();
   }
 }
 
@@ -119,41 +136,97 @@ void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) 
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
   // cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
   // cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
-  ros::param::set("/scalaser/phi", phi0);
-  ros::param::set("/scalaser/phi", dzi);
+  // ros::param::set("/scalaser/phi", PI/180*phi0);
+  // ros::param::set("/scalaser/dzi", dzi);
 
   ROS_INFO("Matching Parameters have been updated.");
 }
 
 void Angle::initializeMatching() {
 
-  // Strangely this parameter update messes the publishing of the stair_middle tf massively up
   setParameters();
 
   beta_new = 0;
   beta_old = 0;
   beta_vector.clear();
+  alpha_vector.clear();
+  dx_1_vector.clear();
+  dx_2_vector.clear();
   time_vector.clear();
+
   count = 0;
 
   cloud_1.setParameters(phi0,dzi,fov_s,fov_d);
   cloud_2.setParameters(phi0,dzi,811-fov_s-fov_d,fov_d);
 
-  ROS_INFO("Start time: %f",time_start);
 
-  cloud_1.setData();
-  cloud_2.setData();
-  cloud_1.setFminArgs(v0);
-  cloud_1.matchTemplate();
-  cloud_2.setFminArgs(cloud_1.getV_r());
-  cloud_2.matchTemplate();
+  ROS_INFO("Start time: %f",time_start);
+  
+  setBoundaries();
 
   time_start = ros::Time::now().toSec();
   count++;
 }
 
+void Angle::setBoundaries() {
+  cloud_1.setData();
+  cloud_2.setData();
+  cloud_1.setFminArgs(v0);
+  v_r_1 = cloud_1.matchTemplate();
+  cloud_2.setFminArgs(v_r_1);
+  v_r_2 = cloud_2.matchTemplate();
+}
+
 void Angle::computeAngle() {
-  beta_new = 180/PI*atan((cloud_2.getDx()-cloud_1.getDx())/a);
+
+  dx_1 = cloud_1.getDx();
+  dx_2 = cloud_2.getDx();
+  diag_1 = cloud_1.getDiag();
+  diag_2 = cloud_2.getDiag();
+
+// Experimental for Curved
+  if (fabs(dx_1) > 0.8*diag_1 || fabs(dx_2) > 0.8*diag_2) {
+    v0 = cloud_1.getV_r();
+    v0(2) = 0;
+    setBoundaries();
+    dx_1 = cloud_1.getDx();
+    dx_2 = cloud_2.getDx();
+    diag_1 = cloud_1.getDiag();
+    diag_2 = cloud_2.getDiag();
+    ROS_INFO("------Edge has been changed!------");
+  }
+
+  computeAlpha();
+  // updateFoV();
+  // setFoV();
+  // setDx();
+// Endperimental
+
+  computeBeta();
+}
+
+void Angle::computeAlpha() {
+  // Get Parameters from matching objects
+  alpha_1 = atan((dx_2 - dx_1) / a);
+  alpha_2 = atan(((diag_2 - dx_2) - (diag_1 - dx_1)) / a);
+  alpha = 180/PI*(alpha_1 + alpha_2);
+  
+  // ROS_INFO("ALPHA_1: %f°", 180/PI*(alpha_1));
+  // ROS_INFO("ALPHA_2: %f°", 180/PI*(alpha_2));
+  // ROS_INFO("ALPHA: %f°", alpha);
+  // ROS_INFO("BETAA: %f°", beta_new);
+  // ROS_INFO("BETAB: %f°", 180/PI*(alpha_1));
+}
+
+void Angle::computeBeta() {
+
+  // beta_new = 180/PI*atan((dx_2 - dx_1)/a); // Single Edge Beta Computation
+
+  beta_new = 180/PI*(alpha_1 - alpha_2)/2;
+
+  // Linear interpolation between two edges
+  d_beta = alpha*(dx_2 - dx_1)/(diag_2 - diag_1);
+  beta_new += d_beta; // + or - not sure yet
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
   if (fabs(beta_new) < 10) {
@@ -163,7 +236,23 @@ void Angle::computeAngle() {
 
     ROS_INFO("Time: %f",ros::Time::now().toSec()-time_start);
     time_vector.push_back(ros::Time::now().toSec()-time_start);
+    alpha_vector.push_back(180/PI*(alpha_1 + alpha_2));
     beta_vector.push_back(beta_new);
+
+    v0 = cloud_1.getV_r();
+    ROS_INFO("Values for Cloud_1:");
+    ROS_INFO("stair heigth________h = %f",v0(0)); 
+    ROS_INFO("stair depth_________t = %f",v0(1));
+    ROS_INFO("phase offset_______dx = %f",v0(2)) ;
+    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+    dx_1_vector.push_back(v0(2));
+    v0 = cloud_2.getV_r();
+    ROS_INFO("Values for Cloud_2:");
+    ROS_INFO("stair heigth________h = %f",v0(0)); 
+    ROS_INFO("stair depth_________t = %f",v0(1));
+    ROS_INFO("phase offset_______dx = %f",v0(2));
+    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
+    dx_2_vector.push_back(v0(2));
 
     wrong_beta_count = 0;
   }
@@ -209,7 +298,7 @@ void Angle::computeVelocity() {
   std::ostringstream buff_2;
 
   if(cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
-    buff_2 << beta.data * kp;
+    buff_2 << - beta.data * kp;
     velo.data += buff_2.str();
   }
   else {
@@ -220,7 +309,7 @@ void Angle::computeVelocity() {
   pub_s_velocity.publish(velo);
 }
 
-void Angle::setPosition() {
+void Angle::pubStairParameters() {
 
   double h = v_s(0);
   double t = v_s(1);
@@ -240,7 +329,7 @@ void Angle::setParameters() {
   n.param("/scalaser/fov_s",fov_s,200);
   n.param("/scalaser/fov_d",fov_d,150);
   n.param("/scalaser/dzi",dzi,.65);
-  n.param("/scalaser/phi",phi0,-43*PI/180);
+  n.param("/scalaser/phi",phi0,-43.0);
   n.param("/scalaser/kp",kp,0.05);
   n.param("/scalaser/vel_fwd",vel_fwd,0.0);
   n.param("/scalaser/threshold",threshold,0.08);
@@ -251,37 +340,82 @@ void Angle::setParameters() {
   ROS_INFO("Field of View Start: %d",fov_s);
   ROS_INFO("Field of View Window: %d",fov_d);
   ROS_INFO("Dz Initial: %f",dzi);
+
+  ROS_INFO("Parameters from Server have been updated.");
 }
 
-void Angle::plot_data() {
-  // plot_engine.initialize();
-  if (plot_engine.initialize() && plot_engine.good()) ROS_INFO("Plot engine succesfully initialized.");
+void Angle::plotData() {
+  plot_engine.executeCommand("clf");
+  plotData(beta_vector);
+  plotData(alpha_vector);
+  // plotData(dx_1_vector);
+  // plotData(dx_2_vector);
 
-  Eigen::VectorXd beta_vectorXd(beta_vector.size());
+  plot_engine.executeCommand("xlabel('Time [s]')");
+  plot_engine.executeCommand("legend('beta [°]', 'alpha [°]', 'step diagonal delta [m]')");
+}
+
+void Angle::plotData(std::vector<double> data_vector) {
+  Eigen::VectorXd data_vectorXd(data_vector.size());
   Eigen::VectorXd time_vectorXd(time_vector.size());
-  for (int i=0; i < beta_vector.size(); ++i) beta_vectorXd[i] = beta_vector[i];
+
+  for (int i=0; i < data_vector.size(); ++i) data_vectorXd[i] = data_vector[i];
   for (int i=0; i < time_vector.size(); ++i) time_vectorXd[i] = time_vector[i];
 
-
-  plot_engine.put("beta_vector",beta_vectorXd);
+  plot_engine.put("data_vector", data_vectorXd);
   plot_engine.put("time_vector",time_vectorXd);
-  // plot_engine.executeCommand("clf('reset');");
-  plot_engine.executeCommand("close(h);");
 
-  plot_engine.executeCommand("h=figure;");
-  plot_engine.executeCommand("plot(time_vector,beta_vector);");
-  plot_engine.executeCommand("saveas(h,beta_plot,'fig')");
+  plot_engine.executeCommand("plot_data(time_vector, data_vector)");
+
 
   ROS_INFO("Results have been plotted.");
   ROS_INFO("Plot has been saved to file.");
-  // To save a std::vector into a .txt file use:
-  // std::ofstream file_beta;
-  // file_beta.open("/home/miro/Desktop/cpp2matlab/beta_vector.txt");
-  // for(std::size_t i = 0; i < beta_vector.size(); ++i) file_beta << beta_vector[i] << std::endl;
-  // file_beta.close();
 
-  // std::ofstream file_time;
-  // file_time.open("/home/miro/Desktop/cpp2matlab/time_vector.txt");
-  // for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
-  // file_time.close();
+  data_vector.clear();
+
+  // To save a std::vector into a .txt file use:
+    // std::ofstream file_beta;
+    // file_beta.open("/home/miro/Desktop/cpp2matlab/beta_vector.txt");
+    // for(std::size_t i = 0; i < beta_vector.size(); ++i) file_beta << beta_vector[i] << std::endl;
+    // file_beta.close();
+
+    // std::ofstream file_time;
+    // file_time.open("/home/miro/Desktop/cpp2matlab/time_vector.txt");
+    // for(std::size_t i = 0; i < time_vector.size(); ++i) file_time << time_vector[i] << std::endl;
+    // file_time.close();
+}
+
+void Angle::initializeEdge() {
+  edge_marker.header.frame_id = "laser_mount_link";
+  edge_marker.header.stamp = ros::Time::now();
+  edge_marker.ns = "edge";
+  edge_marker.id = 1;
+  edge_marker.type = visualization_msgs::Marker::ARROW;
+  edge_marker.action = 0;
+  //edge_marker.pose.orientation.w = 1.0;
+  edge_marker.scale.x = 0.05;
+  edge_marker.scale.y = 0.05;
+  edge_marker.scale.z = 0.001;
+  edge_marker.color.a = 1.0; // Don't forget to set the alpha!
+  edge_marker.color.r = 0.0;
+  edge_marker.color.g = 1.0;
+  edge_marker.color.b = 0.0;
+}
+
+void Angle::pubEdge() {
+  // Publish Edge around which the wheelchair orients it
+  geometry_msgs::Point p;
+
+  p.x = -( cos(- phi0 - v_r_1(4))*-v_r_1(2) + sin(- phi0 - v_r_1(4))*(dzi + v_r_1(3)));
+  p.y = -a/2;
+  p.z = -(-sin(- phi0 - v_r_1(4))*-v_r_1(2) + cos(- phi0 - v_r_1(4))*(dzi + v_r_1(3)));
+  edge_marker.points.push_back(p);
+
+  p.x = -( cos(- phi0 - v_r_2(4))*-v_r_2(2) + sin(- phi0 - v_r_2(4))*(dzi + v_r_2(3)));
+  p.y = a/2;
+  p.z = -(-sin(- phi0 - v_r_2(4))*-v_r_2(2) + cos(- phi0 - v_r_2(4))*(dzi + v_r_2(3)));
+  edge_marker.points.push_back(p);
+
+  pub_edge_marker.publish(edge_marker);
+  edge_marker.points.clear();
 }

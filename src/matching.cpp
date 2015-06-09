@@ -37,7 +37,7 @@ void matching::setData() {
   zi_temp.clear();
   
   for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
-    if (r_temp[i] == 0) {
+    if (r_temp[i] < 0.3) {
       rs_it++;
     }
     else {
@@ -45,7 +45,7 @@ void matching::setData() {
     zi_temp.push_back(sin(i*ang_inc + min_ang)*r_temp[i]);
     }
   }
-  if(rs_it > 0) {ROS_INFO("%d NULL values within FoV.",rs_it);}
+  if(rs_it > 0) {ROS_INFO("%d INVALID values within FoV of Sensor %d.", rs_it, h);}
 }
 
 void matching::transformMsg() {
@@ -57,11 +57,12 @@ void matching::transformMsg() {
   }
 }
 
-void matching::matchTemplate() {
+Eigen::VectorXd matching::matchTemplate() {
   transformMsg();
   fillMatfile();
   // fillEngine();
   publishSe_r();
+  return v_r;
 }
 
 void matching::publishSe_r() {
@@ -119,7 +120,7 @@ void matching::fillMatfile() {
   // ROS_INFO("sensor rotation___phi0 = %f",v_r(4));
   // ROS_INFO("__________________________________");
 
-  // engine.executeCommand("test(xi,zi,h)");
+  engine.executeCommand("test(xi,zi,h)");
 
   double before = ros::Time::now().toSec();
   engine.executeCommand("[v_r, se_r, z_r, xf, zf] = stairparam(xi, zi, v0, h, lb, ub);");
@@ -183,7 +184,11 @@ void matching::fillEngine() {
   engine.get("xf", xf);
   engine.get("zf", zf);
 
-  if(se_r > threshold) ROS_WARN("Pointcloud has not been matched properly. Error: %f",se_r);
-  lb(2) = -10; // Set lower bound of phase of set to ~INF
+  if (se_r < threshold) {
+    setFminArgs(v_r);
+  }
+  else {
+    ROS_WARN("Pointcloud has not been matched properly. Error: %f", se_r);
+  }
 
 }
