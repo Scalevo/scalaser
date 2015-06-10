@@ -4,6 +4,7 @@ Changelog for package scalaser
 
 TODO
 ------------------
+* add kp to plot
 
 KNOWN BUGS
 ------------------
