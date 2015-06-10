@@ -2,8 +2,36 @@
 TESTCASES
 ^^^^^^^^^
 
-(2015-06-08) - test automatic climb of curved stairs 
---------------------
+(2015-06-10) - transition on curved stairs 
+------------
+Test Criteria:
+	* adjustment of beta needs to be smooth
+Results:
+	* offset on curved stairs in nonlegligable
+	* transition from straight to curved stairs leads to matching errors -> play with FoV
+	* beta threshold on straight stairs should be around 10°
+	* turning point on curved stairs is currently to far behind the wheelchair
+
+(2015-06-09) - test manual climb on straight stairs 
+------------
+Test Criteria:
+	* Measure 10 times going up
+		* Maximal Distance
+		* Stop angle from plot
+		* Deviation from straight line
+
+Procedure:
+	* Align Wheelchair straight on stairs
+	* start service -> kp = 0
+	* start bagfile
+	* drive backwards
+	* measure data
+	* drive up and down 10 times
+Results:
+	* little to no deviation while climbing straight stairs
+
+(2015-06-08) - test automatic climb on curved stairs 
+------------
 Test Criteria:
 	* Climb stairs without external alignment help
 	* Recognize stairparameters and position on stairs
@@ -22,7 +50,7 @@ Results:
 	* the wheelchair is usually quite unstable on the curved stairs this was tested -> Track adjustments might help out on this matter
 
 (2015-xx-xx) - robustness test of stair recognition on stairs without solid backwalls
-----------------------------------------------------------------------
+------------
 Test Criteria:
 	* Recognize stairparameters and position on stairs
 
@@ -31,7 +59,7 @@ Results:
 
 
 (2015-06-03) - dynamic test of the controller on stairs
-------------------------------------
+------------
 Test Criteria:
 	* Offset/Distance_Traveled [m]/[m] from straight line up/down during climbing straight stairs
 	* Performance difference of going up and down
@@ -41,7 +69,7 @@ Results:
 	* Offset was not measured during this first test
 
 (2015-05-16) - static test of controller on stairs
------------------------------------
+------------
 Test Criteria:
 	* has only been tested without driving on stairs due to safety measures
 
@@ -50,11 +78,11 @@ Results
 
 
 (2015-05-16) - test multiple fmincon algorithms on their performance and accuracy
--------------
+------------
 * sqp is the fastest with enough accuracy
 
 (2015-05-16) - test multiple FoV configs on their performance and accuracy
------------------------------------------------------------
+------------
 Test Criteria:
 	* At least three edges need to be within the FoV to guarantee a correct identification of the stair parameters
 		* This is dependant mostly on the stair depth
@@ -65,7 +93,7 @@ Results:
 	* more testing and calculations still needed
 
 (2015-05-16) - variable track and stair visualization are working
---------------------------------------------------
+------------
 Test Criteria:
 	* Stairs grow dependant on distance traveled
 	* Tracks change in regards to their position at the acctual wheelchair

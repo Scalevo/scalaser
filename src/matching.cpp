@@ -37,7 +37,7 @@ void matching::setData() {
   zi_temp.clear();
   
   for (int i = fov_s; i < fov_s + fov_d + rs_it; i++) {
-    if (r_temp[i] < 0.3) {
+    if (r_temp[i] < 0.3 && r_temp[i] > 1) {
       rs_it++;
     }
     else {

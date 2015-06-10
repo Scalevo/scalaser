@@ -23,6 +23,13 @@ NICE TO HAVE
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
+
+0.0.14 (2015-06-10)
+-------------------
+* added filter for scan data to be between 0.3 and 1 m
+* changed beta threshold
+* 
+
 0.0.14 (2015-06-08)
 -------------------
 * fixed incorrect alpha computation --> hurray :D
