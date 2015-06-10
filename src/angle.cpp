@@ -7,6 +7,8 @@ kp(0), vel_fwd(0),
 v_r_1(2), v_r_2(2)
 {
   setParameters();
+  initializePlotEngine();
+  initializeEdge();
 
 
   v0 << 0.17, 0.3, 0.0, 0.0, 0.0;
@@ -37,8 +39,6 @@ v_r_1(2), v_r_2(2)
 
 bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msgs::Starter::Response& response) {
   if (request.on) {
-    initializePlotEngine();
-    initializeEdge();
 
     // create subscriber
     sub_1 = n.subscribe("scan_1", 1, &matching::matchCallback, &cloud_1);
@@ -48,15 +48,16 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
 
     // advertise topics
-    pub_1 = n.advertise<std_msgs::Float64>("/beta",1);
-    pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters",1);
-    // pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/set_vel",100);
-    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd",1);
+    pub_1 = n.advertise<std_msgs::Float64>("/beta", 1);
+    pub_2 = n.advertise<std_msgs::Float64MultiArray>("/stair_parameters", 1);
+    // pub_velocity = n.advertise<std_msgs::Float64MultiArray>("/set_vel", 100);
+    pub_s_velocity = n.advertise<std_msgs::String>("/scalevo_cmd", 1);
     pub_edge_marker = n.advertise<visualization_msgs::Marker>("edge_marker", 1);
 
     while (sub_1.getNumPublishers() == 0 || sub_2.getNumPublishers() == 0) {
       sleep(1);
-    }    
+    }
+
     ros::spinOnce();
     
     initializeMatching();
@@ -92,6 +93,8 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
 
     plotData();
     plot_engine.executeCommand("savefig(datestr(now))");
+    ROS_INFO("Plot has been saved to file.");
+
     return true;
   }
   return true;
@@ -124,9 +127,9 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     count++;
   }
 
-  if (fmod(count,20) == 0) {
-    plotData();
-  }
+  // if (fmod(count,20) == 0) {
+  //   plotData();
+ // }
 }
 
 void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) {
@@ -134,7 +137,7 @@ void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) 
   dzi = r_h + s*sin(-phi0 + phi_f);
 
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
-  // cloud_1.setParameters(phi0, dzi, fov_s, fov_d);
+  // cloud_1.setParameters(phi0, dzi, fov_s, ofv_d);
   // cloud_2.setParameters(phi0, dzi, 811-fov_s-fov_d, fov_d);
   // ros::param::set("/scalaser/phi", PI/180*phi0);
   // ros::param::set("/scalaser/dzi", dzi);
@@ -223,13 +226,18 @@ void Angle::computeBeta() {
   // beta_new = 180/PI*atan((dx_2 - dx_1)/a); // Single Edge Beta Computation
 
   beta_new = 180/PI*(alpha_1 - alpha_2)/2;
+  ROS_INFO("ALPHA:         %f°", alpha);
+  ROS_INFO("BETA_SIMPLE:   %f°", beta_new);
 
-  // Linear interpolation between two edges
-  d_beta = alpha*(dx_2 - dx_1)/(diag_2 - diag_1);
-  beta_new += d_beta; // + or - not sure yet
+    // Linear interpolation between two edges
+  d_beta = alpha*(dx_2 + dx_1)/(diag_2 + diag_1) - alpha/2;
+  beta_new -= d_beta; // + or - not sure yet
+
+  ROS_INFO("D_BETA:        %f°", d_beta);
+  ROS_INFO("BETA_INTERP:   %f°", beta_new);
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
-  if (fabs(beta_new) < 10) {
+  if (fabs(beta_new) < 15) {
 
     beta.data = beta_new;
     pub_1.publish(beta);
@@ -240,18 +248,8 @@ void Angle::computeBeta() {
     beta_vector.push_back(beta_new);
 
     v0 = cloud_1.getV_r();
-    ROS_INFO("Values for Cloud_1:");
-    ROS_INFO("stair heigth________h = %f",v0(0)); 
-    ROS_INFO("stair depth_________t = %f",v0(1));
-    ROS_INFO("phase offset_______dx = %f",v0(2)) ;
-    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
     dx_1_vector.push_back(v0(2));
     v0 = cloud_2.getV_r();
-    ROS_INFO("Values for Cloud_2:");
-    ROS_INFO("stair heigth________h = %f",v0(0)); 
-    ROS_INFO("stair depth_________t = %f",v0(1));
-    ROS_INFO("phase offset_______dx = %f",v0(2));
-    ROS_INFO("diagonal_________diag = %f",sqrt(v0(1)*v0(1) + v0(2)*v0(2)));
     dx_2_vector.push_back(v0(2));
 
     wrong_beta_count = 0;
@@ -369,7 +367,6 @@ void Angle::plotData(std::vector<double> data_vector) {
 
 
   ROS_INFO("Results have been plotted.");
-  ROS_INFO("Plot has been saved to file.");
 
   data_vector.clear();
 
@@ -387,7 +384,6 @@ void Angle::plotData(std::vector<double> data_vector) {
 
 void Angle::initializeEdge() {
   edge_marker.header.frame_id = "laser_mount_link";
-  edge_marker.header.stamp = ros::Time::now();
   edge_marker.ns = "edge";
   edge_marker.id = 1;
   edge_marker.type = visualization_msgs::Marker::ARROW;
@@ -403,7 +399,8 @@ void Angle::initializeEdge() {
 }
 
 void Angle::pubEdge() {
-  // Publish Edge around which the wheelchair orients it
+  edge_marker.header.stamp = ros::Time::now();
+  // Publish Edge around which the wheelchair orients itf
   geometry_msgs::Point p;
 
   p.x = -( cos(- phi0 - v_r_1(4))*-v_r_1(2) + sin(- phi0 - v_r_1(4))*(dzi + v_r_1(3)));

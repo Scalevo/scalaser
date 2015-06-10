@@ -1,4 +1,4 @@
-function [ v_r,se_r,z_r,xi,zi ] = stairparam(x0, z0, v0_, hs, lb ,ub )
+function [ v_r, se_r, z_r, xi, zi ] = stairparam(x0, z0, v0_, hs, lb ,ub )
 % Returns the result of the fminserach using start values as well as the
 % pointcloud vectors.
 %
@@ -13,16 +13,19 @@ con_options = struct('Algorithm', 'sqp'); % 'OutputFcn', @outfun,,'PlotFcns',@op
 % [v_r, se_r] = fminsearch(handle,v0_,search_options);
 [v_r, se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub, [],con_options);
 
-%disp(v_r);
 
-    % subplot(2, 1, hs);
     % plot(xi, zi, 'x');
     % axis equal tight
     % hold on;
     % plot(xi, z_r, 'o')
     % axis equal tight
     % hold off;
-    % xlabel(hs);
+    % ylabel('z [m]','FontSize',20);
+    % xlabel('x [m]','FontSize',20);
+    % h_legend = legend('Transformed PointCloud', 'Matched Template');
+    % set(h_legend,'FontSize',15);
+
+%disp(v_r);
 
 %% Delta function - calculates the difference between real-z and template-z
     function [se] = delta(v)
@@ -69,29 +72,40 @@ con_options = struct('Algorithm', 'sqp'); % 'OutputFcn', @outfun,,'PlotFcns',@op
 %         z = z - cos(eta)*h/2;
 %%       If_else parametrisation
 
-        z_r = zeros(1,length(xi));        
+        z_r = zeros(1, length(xi));        
         for it = 1:length(xi)
             n = floor(xi(it)/x2);
-            if mod(xi(it),x2) < x1
+            if mod(xi(it), x2) < x1
                 z_r(it) = xi(it)*tan(eta) - n*t/(cos(eta)) - h*sin(eta);
             else
-            z_r(it) = -xi(it)/(tan(eta)) + (n+1)*h/(sin(eta)) - h*sin(eta);
+            z_r(it) = -xi(it)/(tan(eta)) + (n + 1)*h/(sin(eta)) - h*sin(eta);
             end
         end
         
         %e = (zi - z_r);    % Error between pointcloud and template
         for i = 1:length(xi)
-          e(i) = zi(i)-z_r(i);
-	end
-        se = dot(e,e);
+          e(i) = zi(i) - z_r(i);
+    end
+        se = dot(e, e);
         
         % plot(xi,zi,'x');
         % axis equal tight
         % hold on;
         % plot(xi,z_r,'o')
         % axis equal tight
-	    % hold off;
+        % hold off;
         
+
+    % plot(xi, zi, 'x');
+    % axis equal tight
+    % hold on;
+    % plot(xi, z_r, 'o')
+    % axis equal tight
+    % hold off;
+    % ylabel('z [m]','FontSize',20);
+    % xlabel('x [m]','FontSize',20);
+    % h_legend = legend('Transformed PointCloud', 'Matched Template');
+    % set(h_legend,'FontSize',15);
 
     end
 end
