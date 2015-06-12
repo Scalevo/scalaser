@@ -11,5 +11,4 @@
   <node pkg="scalaser" type="Angle" name="angle" output="screen" >
   </node>
 
-
 </launch>
