@@ -91,7 +91,7 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     ROS_INFO("Duration:           %f", ros::Time::now().toSec() - time_start);
     ROS_INFO("Average frequency:  %f Hz",count/(ros::Time::now().toSec() - time_start));
 
-    plotData(beta_vector);
+    plotData();
     plot_engine.executeCommand("savefig(datestr(now))");
     ROS_INFO("Plot has been saved to file.");
 
@@ -127,8 +127,8 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     count++;
   }
 
- //  if (fmod(count,5) == 0) {
- //    plotData(beta_vector);
+  // if (fmod(count,20) == 0) {
+  //   plotData();
  // }
 }
 
@@ -237,7 +237,7 @@ void Angle::computeBeta() {
   ROS_INFO("BETA_INTERP:   %f°", beta_new);
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
-  if (fabs(beta_new) < 15 && cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
+  if (fabs(beta_new) < 15) {
 
     beta.data = beta_new;
     pub_1.publish(beta);
