@@ -5,31 +5,43 @@ Changelog for package scalaser
 TODO
 ------------------
 * add kp to plot
+* change matlab plots to change data setXdata, setYdata
+* define beta threshold in launch file
+* add folder for figures
 
 KNOWN BUGS
 ------------------
 * Fix inconsistent performance of the angle node. It ranges from 1 Hz to 4 Hz. If a rviz is started the frequency takes a hit, however once it's closed again the node wont performe as well as before.
+* joint_states influence towards the initial guesses causes a big mess for the stair_model
 
 
 NICE TO HAVE
 ------------------
+* add radius-tracking
+* add 3D model for curved stairs
+* field of view initialization
+* add field of view in rviz
 * clean up v_r_1 and dx_1 in angle.cpp
 * add initialization for start and end of stairs to determine when to stop the stair model
 * add timestamp to published messages
 * make fov_s, fov_d dependant of the lambda position received from the MyRIO
 * make stair growth dependant of fov_s
-* define beta threshold in launch file
 * make the velocity_forward sent to the MyRio adjustable with dynamic reconfigure
 * (use IMU values to set guess for beta threshold value -> not sure if needed, since the wheelchair never comes close to a beta=~24°)
 * (change the initialization of v0 from within the angle constructor to the matching constructor since startvalues for both sides are identical)
 * (change tf static to tf2 static)
 
+0.1.00 (2015-06-12)
+-------------------
+* if fmincon did not converge the angle computations are not executed, additionally if this happens for more than 3 times matching gets reinitialized
+* commented everything within joint_callback out
+* stair model size has been updated
+* changed dx reinitialization to only happen if the stair is acctually curved 
 
 0.0.14 (2015-06-10)
 -------------------
 * added filter for scan data to be between 0.3 and 1 m
 * changed beta threshold
-* 
 
 0.0.14 (2015-06-08)
 -------------------

@@ -100,7 +100,7 @@ void StairModel::setPosition() {
   }
 
   geometry_msgs::Point p;
-  for (int i=floor(stair_bot); i < ceil(stair_top)+3; i++) {
+  for (int i=floor(stair_bot); i < ceil(stair_top) + 2; i++) {
   p.x = 0 - h*i;
   p.y = 0;
   p.z = 0 - t*i;

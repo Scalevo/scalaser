@@ -1,10 +1,11 @@
 #include "angle.h"
 
 Angle::Angle(ros::NodeHandle n_):
-n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0), wrong_beta_count(0),
+n(n_), a(.7), v_s(5), beta_old(0), beta_new(0), v0(5), count(0), wrong_beta_count(0), wrong_se_r_count(0)
 r_h(.1016), s(.653837), phi_f(.193897),
 kp(0), vel_fwd(0),
-v_r_1(2), v_r_2(2)
+v_r_1(2), v_r_2(2),
+alpha(0)
 {
   setParameters();
   initializePlotEngine();
@@ -86,10 +87,10 @@ bool Angle::alignWheelchair(scalevo_msgs::Starter::Request& request, scalevo_msg
     // stop main loop timer
     main_timer.stop();
 
-    ROS_INFO("Wheelchair alignment has been stopped.");
     ROS_INFO("Nr of computations: %d", count);
     ROS_INFO("Duration:           %f", ros::Time::now().toSec() - time_start);
     ROS_INFO("Average frequency:  %f Hz",count/(ros::Time::now().toSec() - time_start));
+    ROS_INFO("Wheelchair alignment has been stopped.");
 
     plotData(beta_vector);
     plot_engine.executeCommand("savefig(datestr(now))");
@@ -117,11 +118,17 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
     v_r_1 = cloud_1.matchTemplate();
     v_r_2 = cloud_2.matchTemplate();
 
-    computeAngle();
-    computeStair();
+    if (cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
+      computeAngle();
+      computeStair();
+      pubStairParameters();
+      pubEdge();
+    }
+    else {
+      ROS_WARN("Nothing published because fmincon did not converge.");
+    }
+
     computeVelocity();
-    pubStairParameters();
-    pubEdge();
 
     ROS_INFO("Callback time:        %f",event.profile.last_duration.toSec());
     count++;
@@ -133,8 +140,8 @@ void Angle::timerCallback(const ros::TimerEvent& event) {
 }
 
 void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) {
-  phi0 = -joint_state -> position[0];
-  dzi = r_h + s*sin(-phi0 + phi_f);
+  // phi0 = -joint_state -> position[0];
+  // dzi = r_h + s*sin(-phi0 + phi_f);
 
   // to only set parameters after reinitialization comment this code and write phi0 and dzi to the parameter server instead
   // cloud_1.setParameters(phi0, dzi, fov_s, ofv_d);
@@ -142,7 +149,7 @@ void Angle::jointCallback(const sensor_msgs::JointState::ConstPtr& joint_state) 
   // ros::param::set("/scalaser/phi", PI/180*phi0);
   // ros::param::set("/scalaser/dzi", dzi);
 
-  ROS_INFO("Matching Parameters have been updated.");
+  // ROS_INFO("Matching Parameters have been updated.");
 }
 
 void Angle::initializeMatching() {
@@ -187,18 +194,19 @@ void Angle::computeAngle() {
   diag_1 = cloud_1.getDiag();
   diag_2 = cloud_2.getDiag();
 
-// Experimental for Curved
-  if (fabs(dx_1) > 0.8*diag_1 || fabs(dx_2) > 0.8*diag_2) {
-    v0 = cloud_1.getV_r();
-    v0(2) = 0;
-    setBoundaries();
-    dx_1 = cloud_1.getDx();
-    dx_2 = cloud_2.getDx();
-    diag_1 = cloud_1.getDiag();
-    diag_2 = cloud_2.getDiag();
-    ROS_INFO("------Edge has been changed!------");
+// Experimental for Curve
+  if (fabs(alpha) > 1) {
+    if (fabs(dx_1) > 0.8*diag_1 || fabs(dx_2) > 0.8*diag_2) {
+      v0 = cloud_1.getV_r();
+      v0(2) = 0;
+      setBoundaries();
+      dx_1 = cloud_1.getDx();
+      dx_2 = cloud_2.getDx();
+      diag_1 = cloud_1.getDiag();
+      diag_2 = cloud_2.getDiag();
+      ROS_INFO("------Edge has been changed!------");
+    }
   }
-
   computeAlpha();
   // updateFoV();
   // setFoV();
@@ -237,7 +245,7 @@ void Angle::computeBeta() {
   ROS_INFO("BETA_INTERP:   %f°", beta_new);
 
   // if (fabs(beta_old - beta_new) < 15 && fabs(beta_old) < 10) {
-  if (fabs(beta_new) < 15 && cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
+  if (fabs(beta_new) < 15) {
 
     beta.data = beta_new;
     pub_1.publish(beta);
@@ -298,11 +306,13 @@ void Angle::computeVelocity() {
   if(cloud_1.getSe_r() < threshold && cloud_2.getSe_r() < threshold) {
     buff_2 << - beta.data * kp;
     velo.data += buff_2.str();
+    wrong_se_r_count = 0;
   }
   else {
+    wrong_se_r_count++;
     buff_2 << 0;
     velo.data += buff_2.str();
-    ROS_WARN("No velocity published since matching didn't work properly.");
+    if (wrong_se_r_count > 3) initializeMatching();
   }
   pub_s_velocity.publish(velo);
 }

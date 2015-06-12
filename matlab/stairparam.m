@@ -13,7 +13,7 @@ con_options = struct('Algorithm', 'sqp'); % 'OutputFcn', @outfun,,'PlotFcns',@op
 % [v_r, se_r] = fminsearch(handle,v0_,search_options);
 [v_r, se_r] = fmincon(handle, v0_, [], [], [], [], lb, ub, [],con_options);
 
-
+    % subplot(2,1,hs)
     % plot(xi, zi, 'x');
     % axis equal tight
     % hold on;

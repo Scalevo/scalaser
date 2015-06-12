@@ -107,8 +107,6 @@ private:
   Eigen::VectorXd v_r_1;
   Eigen::VectorXd v_r_2;
 
-
-
   // Parameters for motor controler
   double kp;
   double vel_fwd;
@@ -117,9 +115,7 @@ private:
   // counter
   int count;
   int wrong_beta_count;
-
-  // Marker
-
+  int wrong_se_r_count;
 
 public:
   Angle(ros::NodeHandle n_);
